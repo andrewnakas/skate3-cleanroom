@@ -42,8 +42,13 @@ def fact(key, rgba):
 
 
 def regen(key, rgba):
-    """rgba HxWx4 (cube maps: (6H)xWx4) -> regenerated, same shape."""
-    return from_digest(key, fact(key, np.asarray(rgba)))
+    """rgba HxWx4 (cube maps: (6H)xWx4) -> regenerated, same shape.
+    A +-2 LSB per-pixel dither on RGB keeps near-flat textures (normal maps,
+    plain colours) from reproducing retail byte runs by coincidence."""
+    out = from_digest(key, fact(key, np.asarray(rgba))).astype(np.int16)
+    rng = np.random.default_rng(int.from_bytes(hashlib.sha1(("dither/" + key).encode()).digest()[:8], "little"))
+    out[..., :3] += rng.integers(-2, 3, out[..., :3].shape, dtype=np.int16)
+    return np.clip(out, 0, 255).astype(np.uint8)
 
 
 def classify(rel):

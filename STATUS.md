@@ -10,7 +10,7 @@
 - Audio: the pack has no audio (engine plays none from the pack) -> nothing to clean; no music, no speech.
 
 ## In progress
-- Taint report (`python -m games.skate3.taint_report <dirty> <clean>`): per-texture pairwise run check + 1/64 sampled global index.
+- Taint: 0 failing (7681 textures; pairwise run check + 1/64 sampled global index; +-2 LSB RGB dither added after a first run found 1114 coincidental 33-66 B runs in near-flat textures).
 - Web port (engine branch cleanroom-web): VFS, wasm gates, WebGPU, loader page, web_pack.py.
 
 ## Next
