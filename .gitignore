@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+*.z64
+*.n64
+*.v64
+*.zip
+baserom*
+*.big
+*.xex
+*.skate
+*.glb
+dirty/
+pack/
+target/
+spec/
+*.wav

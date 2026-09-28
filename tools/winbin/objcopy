@@ -1,0 +1,2 @@
+#!/bin/sh
+exec /c/Users/andre/.local/clang+llvm-23.1.2-x86_64-pc-windows-msvc/bin/llvm-objcopy.exe "$@"

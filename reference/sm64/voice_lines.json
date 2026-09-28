@@ -1,0 +1,203 @@
+{
+ "_doc": "Spoken lines for the voice sample slots (words from the sample names and the game's own text). who: mario | peach; kind: speech (TTS) or snore (procedural).",
+ "sound/samples/sfx_mario/00_mario_jump_hoo.aiff": {
+  "who": "mario",
+  "text": "Hoo!"
+ },
+ "sound/samples/sfx_mario/01_mario_jump_wah.aiff": {
+  "who": "mario",
+  "text": "Wah!"
+ },
+ "sound/samples/sfx_mario/02_mario_yah.aiff": {
+  "who": "mario",
+  "text": "Yah!"
+ },
+ "sound/samples/sfx_mario/03_mario_haha.aiff": {
+  "who": "mario",
+  "text": "Ha ha ha!"
+ },
+ "sound/samples/sfx_mario/04_mario_yahoo.aiff": {
+  "who": "mario",
+  "text": "Yah-hoo!"
+ },
+ "sound/samples/sfx_mario/05_mario_uh.aiff": {
+  "who": "mario",
+  "text": "Uh!"
+ },
+ "sound/samples/sfx_mario/06_mario_hrmm.aiff": {
+  "who": "mario",
+  "text": "Hmm!"
+ },
+ "sound/samples/sfx_mario/07_mario_wah2.aiff": {
+  "who": "mario",
+  "text": "Wah!"
+ },
+ "sound/samples/sfx_mario/08_mario_whoa.aiff": {
+  "who": "mario",
+  "text": "Whoa!"
+ },
+ "sound/samples/sfx_mario/09_mario_eeuh.aiff": {
+  "who": "mario",
+  "text": "Ugh!"
+ },
+ "sound/samples/sfx_mario/0A_mario_attacked.aiff": {
+  "who": "mario",
+  "text": "Ow!"
+ },
+ "sound/samples/sfx_mario/0B_mario_ooof.aiff": {
+  "who": "mario",
+  "text": "Oof!"
+ },
+ "sound/samples/sfx_mario/0C_mario_here_we_go.aiff": {
+  "who": "mario",
+  "text": "Here we go!"
+ },
+ "sound/samples/sfx_mario/0D_mario_yawning.aiff": {
+  "who": "mario",
+  "text": "Ahh, hmm."
+ },
+ "sound/samples/sfx_mario/0E_mario_snoring1.aiff": {
+  "who": "mario",
+  "kind": "snore"
+ },
+ "sound/samples/sfx_mario/0F_mario_snoring2.aiff": {
+  "who": "mario",
+  "kind": "snore"
+ },
+ "sound/samples/sfx_mario/10_mario_doh.aiff": {
+  "who": "mario",
+  "text": "Doh!"
+ },
+ "sound/samples/sfx_mario/11_mario_game_over.aiff": {
+  "who": "mario",
+  "text": "Game over."
+ },
+ "sound/samples/sfx_mario/12_mario_hello.aiff": {
+  "who": "mario",
+  "text": "Hello!"
+ },
+ "sound/samples/sfx_mario/13_mario_press_start_to_play.aiff": {
+  "who": "mario",
+  "text": "Press start to play!"
+ },
+ "sound/samples/sfx_mario/14_mario_twirl_bounce.aiff": {
+  "who": "mario",
+  "text": "Wah-hoo!"
+ },
+ "sound/samples/sfx_mario/15_mario_snoring3.aiff": {
+  "who": "mario",
+  "kind": "snore"
+ },
+ "sound/samples/sfx_mario/16_mario_so_longa_bowser.aiff": {
+  "who": "mario",
+  "text": "So long a Bowser!"
+ },
+ "sound/samples/sfx_mario/17_mario_ima_tired.aiff": {
+  "who": "mario",
+  "text": "I'm a tired."
+ },
+ "sound/samples/sfx_mario/18_mario_waha.aiff": {
+  "who": "mario",
+  "text": "Wa-ha-ha!"
+ },
+ "sound/samples/sfx_mario/19_mario_yippee.aiff": {
+  "who": "mario",
+  "text": "Yip-pee!"
+ },
+ "sound/samples/sfx_mario/1A_mario_lets_a_go.aiff": {
+  "who": "mario",
+  "text": "Let's a go!"
+ },
+ "sound/samples/sfx_mario_peach/00_mario_waaaooow.aiff": {
+  "who": "mario",
+  "text": "Whoooa!"
+ },
+ "sound/samples/sfx_mario_peach/01_mario_hoohoo.aiff": {
+  "who": "mario",
+  "text": "Hoo hoo!"
+ },
+ "sound/samples/sfx_mario_peach/02_mario_panting.aiff": {
+  "who": "mario",
+  "text": "Hah, hah."
+ },
+ "sound/samples/sfx_mario_peach/03_mario_dying.aiff": {
+  "who": "mario",
+  "text": "Oh no!"
+ },
+ "sound/samples/sfx_mario_peach/04_mario_on_fire.aiff": {
+  "who": "mario",
+  "text": "Ow, ow, ow, hot!"
+ },
+ "sound/samples/sfx_mario_peach/05_mario_uh2.aiff": {
+  "who": "mario",
+  "text": "Uh!"
+ },
+ "sound/samples/sfx_mario_peach/06_mario_coughing.aiff": {
+  "who": "mario",
+  "text": "Cough!"
+ },
+ "sound/samples/sfx_mario_peach/07_mario_its_a_me_mario.aiff": {
+  "who": "mario",
+  "text": "It's a me, Mario!"
+ },
+ "sound/samples/sfx_mario_peach/08_mario_punch_yah.aiff": {
+  "who": "mario",
+  "text": "Yah!"
+ },
+ "sound/samples/sfx_mario_peach/09_mario_punch_hoo.aiff": {
+  "who": "mario",
+  "text": "Hoo!"
+ },
+ "sound/samples/sfx_mario_peach/0A_mario_mama_mia.aiff": {
+  "who": "mario",
+  "text": "Mama mia!"
+ },
+ "sound/samples/sfx_mario_peach/0B_mario_okey_dokey.aiff": {
+  "who": "mario",
+  "text": "Okie dokie!"
+ },
+ "sound/samples/sfx_mario_peach/0C_mario_drowning.aiff": {
+  "who": "mario",
+  "text": "Help! Glub!"
+ },
+ "sound/samples/sfx_mario_peach/0D_mario_thank_you_playing_my_game.aiff": {
+  "who": "mario",
+  "text": "Thank you so much for playing my game!"
+ },
+ "sound/samples/sfx_mario_peach/0E_peach_dear_mario.aiff": {
+  "who": "peach",
+  "text": "Dear Mario: Please come to the castle. I've baked a cake for you. Yours truly, Princess Toadstool."
+ },
+ "sound/samples/sfx_mario_peach/0F_peach_mario.aiff": {
+  "who": "peach_quick",
+  "text": "Mario!"
+ },
+ "sound/samples/sfx_mario_peach/10_peach_power_of_the_stars.aiff": {
+  "who": "peach",
+  "text": "The power of the stars is restored to the castle."
+ },
+ "sound/samples/sfx_mario_peach/11_peach_thanks_to_you.aiff": {
+  "who": "peach",
+  "text": "And it's all thanks to you!"
+ },
+ "sound/samples/sfx_mario_peach/12_peach_thank_you_mario.aiff": {
+  "who": "peach",
+  "text": "Thank you, Mario!"
+ },
+ "sound/samples/sfx_mario_peach/13_peach_something_special.aiff": {
+  "who": "peach",
+  "text": "We have to do something special for you."
+ },
+ "sound/samples/sfx_mario_peach/14_peach_bake_a_cake.aiff": {
+  "who": "peach",
+  "text": "Listen, everybody, let's bake a delicious cake."
+ },
+ "sound/samples/sfx_mario_peach/15_peach_for_mario.aiff": {
+  "who": "peach_quick",
+  "text": "For Mario!"
+ },
+ "sound/samples/sfx_mario_peach/16_peach_mario2.aiff": {
+  "who": "peach_quick",
+  "text": "Mario!"
+ }
+}

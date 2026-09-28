@@ -1,0 +1,4 @@
+#!/bin/sh
+# minimal hexdump stand-in for: hexdump -v -e '1/1 "0x%X,"' FILE
+f=""; for a in "$@"; do f="$a"; done
+exec python -c "import sys;sys.stdout.write(''.join('0x%X,'%b for b in open(sys.argv[1],'rb').read()))" "$f"

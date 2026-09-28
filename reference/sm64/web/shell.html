@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SM64 Clean Room</title>
+<style>
+  :root { --bg: #101318; --fg: #e8e6e1; --dim: #9aa0a8; --accent: #f2c14e; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg);
+    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; overflow: hidden; }
+  #wrap { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
+  canvas { display: block; background: #000; image-rendering: auto;
+    width: min(100vw, calc(100vh * 4 / 3)); height: min(100vh, calc(100vw * 3 / 4)); }
+  #start { position: fixed; inset: 0; display: flex; flex-direction: column; gap: 14px;
+    align-items: center; justify-content: center; background: rgba(10, 12, 16, .92); cursor: pointer;
+    text-align: center; padding: 16px; }
+  #start h1 { margin: 0; font-size: 28px; letter-spacing: .02em; }
+  #start .go { background: var(--accent); color: #1a1400; font-weight: 700; border-radius: 999px;
+    padding: 10px 26px; font-size: 16px; }
+  #start p { margin: 0; color: var(--dim); max-width: 560px; }
+  kbd { border: 1px solid #555; border-bottom-width: 2px; border-radius: 4px; padding: 0 5px;
+    font: 12px ui-monospace, monospace; color: var(--fg); }
+  #status { position: fixed; left: 12px; bottom: 10px; color: var(--dim); font-size: 12px; }
+</style>
+</head>
+<body>
+<div id="wrap"><canvas id="canvas" tabindex="-1" oncontextmenu="event.preventDefault()"></canvas></div>
+<div id="start">
+  <h1>Super Mario 64 &mdash; clean room</h1>
+  <div class="go">Click to play</div>
+  <p>Built from the n64decomp source with every texture, sound and glyph regenerated from coarse
+     outlines; no ROM data is shipped.</p>
+  <p><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move &middot; <kbd>L</kbd> A (jump) &middot;
+     <kbd>,</kbd> B (punch) &middot; <kbd>K</kbd> Z &middot; <kbd>Space</kbd> Start &middot;
+     arrows C&nbsp;buttons &middot; <kbd>R&nbsp;Shift</kbd> R &middot; gamepads work too</p>
+</div>
+<div id="status"></div>
+<script>
+var Q = new URLSearchParams(location.search);
+var statusEl = document.getElementById('status');
+var Module = {
+  canvas: document.getElementById('canvas'),
+  print: function (t) { console.log(t); },
+  printErr: function (t) { console.log(t); },
+  setStatus: function (t) { statusEl.textContent = t || ''; },
+  onRuntimeInitialized: function () { statusEl.textContent = ''; }
+};
+
+// Dev hooks (headless tests): ?dump=5,10 logs canvas PNGs at those seconds;
+// ?keys=4:Space:0.2,9:KeyL:0.1 presses a key code at t seconds for d seconds.
+function devHooks(t0) {
+  if (Q.has('dump')) {   // keep frames readable for toDataURL
+    var gc = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function (t, o) { o = o || {}; o.preserveDrawingBuffer = true; return gc.call(this, t, o); };
+  }
+  if (Q.has('audiolog')) {   // log output loudness (dB) every 250 ms
+    var csp = AudioContext.prototype.createScriptProcessor;
+    AudioContext.prototype.createScriptProcessor = function () {
+      var node = csp.apply(this, arguments), acc = 0, n = 0, last = performance.now();
+      var desc = Object.getOwnPropertyDescriptor(ScriptProcessorNode.prototype, 'onaudioprocess');
+      Object.defineProperty(node, 'onaudioprocess', {
+        set: function (fn) {
+          desc.set.call(node, function (ev) {
+            fn(ev);
+            var d = ev.outputBuffer.getChannelData(0);
+            for (var i = 0; i < d.length; i++) { acc += d[i] * d[i]; }
+            n += d.length;
+            var t = performance.now();
+            if (t - last > 250) {
+              console.log('AUDIO ' + Math.round(t - t0) + ' ' + (10 * Math.log10(acc / Math.max(n, 1) + 1e-12)).toFixed(1));
+              acc = 0; n = 0; last = t;
+            }
+          });
+        }
+      });
+      return node;
+    };
+  }
+  if (Q.has('hb')) setInterval(function () { console.log('hb ' + Math.round(performance.now() - t0)); }, 1000);
+  var dumps = (Q.get('dump') || '').split(',').filter(Boolean).map(Number);
+  dumps.forEach(function (s, k) {
+    setTimeout(function () {
+      var done = false;
+      function dump() {
+        if (done) return; done = true;
+        var url = Module.canvas.toDataURL('image/png');
+        for (var i = 0; i < url.length; i += 4000) console.log('PW64PNG:' + k + ':' + url.slice(i, i + 4000));
+        console.log('PW64PNG:' + k + ':END');
+      }
+      requestAnimationFrame(dump);
+      setTimeout(dump, 300);
+    }, s * 1000);
+  });
+  (Q.get('keys') || '').split(',').filter(Boolean).forEach(function (e) {
+    var p = e.split(':'), t = +p[0], code = p[1], d = +(p[2] || 0.15);
+    setTimeout(function () { window.dispatchEvent(new KeyboardEvent('keydown', { code: code })); }, t * 1000);
+    setTimeout(function () { window.dispatchEvent(new KeyboardEvent('keyup', { code: code })); }, (t + d) * 1000);
+  });
+}
+
+function start() {
+  document.getElementById('start').remove();
+  var s = document.createElement('script');
+  s.src = 'sm64.us.js';
+  document.body.appendChild(s);
+  devHooks(performance.now());
+  Module.canvas.focus();
+}
+document.getElementById('start').addEventListener('click', start, { once: true });
+if (Q.has('autostart') || Q.has('dump')) start();
+</script>
+</body>
+</html>

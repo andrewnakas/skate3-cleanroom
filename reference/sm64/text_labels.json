@@ -1,0 +1,54 @@
+{
+ "_doc": "Textures whose content is text: redrawn with cleanroom.gfx.strokefont. lines = text rows; ink/bg RGBA (bg alpha 0 = transparent); sig = extra script-like line.",
+ "levels/castle_grounds/5.ia8.png": {
+  "lines": [
+   "Peach"
+  ],
+  "ink": [
+   60,
+   20,
+   30,
+   235
+  ],
+  "bg": [
+   0,
+   0,
+   0,
+   0
+  ]
+ },
+ "levels/intro/2_copyright.rgba16.png": {
+  "lines": [
+   "(C) 1996 NINTENDO"
+  ],
+  "ink": [
+   240,
+   240,
+   240,
+   255
+  ],
+  "bg": [
+   0,
+   0,
+   0,
+   255
+  ]
+ },
+ "levels/intro/3_tm.rgba16.png": {
+  "lines": [
+   "TM"
+  ],
+  "ink": [
+   240,
+   240,
+   240,
+   255
+  ],
+  "bg": [
+   0,
+   0,
+   0,
+   255
+  ]
+ }
+}

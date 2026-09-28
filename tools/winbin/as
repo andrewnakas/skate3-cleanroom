@@ -1,0 +1,9 @@
+#!/bin/sh
+# GNU as stand-in for data-only .s files: clang integrated assembler (ELF out)
+args=""; while [ $# -gt 0 ]; do case "$1" in
+  --defsym) args="$args -Wa,--defsym,$2"; shift 2;;
+  -MD) shift 2;;
+  -I) args="$args -I $2"; shift 2;;
+  *) args="$args $1"; shift;;
+esac; done
+exec /c/Users/andre/.local/clang+llvm-23.1.2-x86_64-pc-windows-msvc/bin/clang.exe --target=x86_64-linux-gnu -c -x assembler $args -

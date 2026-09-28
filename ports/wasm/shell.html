@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pilotwings 64 Clean Room</title>
+<style>
+  :root { --bg: #0d1420; --panel: #152033; --ink: #e8eef8; --dim: #93a4bf; --accent: #ffd23f; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 system-ui, sans-serif; }
+  header { padding: 12px 16px; display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+  header h1 { font-size: 18px; margin: 0; }
+  header span { color: var(--dim); font-size: 13px; }
+  #stage { position: relative; margin: 0 auto; width: min(100vw, 133.33vh - 120px); aspect-ratio: 4 / 3; background: #000; }
+  #pw64screen { display: block; width: 100%; height: 100%; image-rendering: auto; }
+  #canvas { display: none; }
+  #overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+             gap: 10px; background: rgba(8, 12, 20, .78); cursor: pointer; text-align: center; padding: 16px; }
+  #overlay b { font-size: 22px; color: var(--accent); }
+  #status { color: var(--dim); }
+  #bar { width: 60%; height: 6px; background: #22314d; border-radius: 3px; overflow: hidden; }
+  #bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+  #help { max-width: 900px; margin: 14px auto 28px; padding: 0 16px; color: var(--dim); font-size: 13px; }
+  #help table { border-collapse: collapse; margin-top: 6px; }
+  #help td { padding: 2px 14px 2px 0; }
+  kbd { background: var(--panel); border: 1px solid #2c3d5c; border-radius: 4px; padding: 0 5px; color: var(--ink); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Pilotwings 64 Clean Room</h1>
+  <span>Built without the original ROM: regenerated art, audio and text, running in WebAssembly</span>
+</header>
+<div id="stage">
+  <canvas id="pw64screen" width="320" height="240"></canvas>
+  <canvas id="canvas"></canvas>
+  <div id="overlay">
+    <b>Click to play</b>
+    <div id="status">Loading...</div>
+    <div id="bar"><i></i></div>
+  </div>
+</div>
+<div id="help">
+  <table>
+    <tr><td>Fly / move</td><td><kbd>&larr;</kbd> <kbd>&uarr;</kbd> <kbd>&rarr;</kbd> <kbd>&darr;</kbd></td>
+        <td>A / B</td><td><kbd>X</kbd> / <kbd>C</kbd></td></tr>
+    <tr><td>Start</td><td><kbd>Enter</kbd></td><td>Z / L / R</td><td><kbd>Z</kbd> / <kbd>A</kbd> / <kbd>S</kbd></td></tr>
+    <tr><td>C buttons</td><td><kbd>I</kbd> <kbd>J</kbd> <kbd>K</kbd> <kbd>L</kbd></td>
+        <td>D-pad</td><td><kbd>T</kbd> <kbd>F</kbd> <kbd>G</kbd> <kbd>H</kbd></td></tr>
+  </table>
+  <p>A gamepad works too (left stick flies, right stick is the C buttons, left trigger is Z). Mods are not available in the web build.</p>
+</div>
+<script>
+  // Threads need cross-origin isolation; on static hosts a service worker provides it.
+  if (!window.crossOriginIsolated && 'serviceWorker' in navigator && !sessionStorage.getItem('coiReloaded')) {
+    navigator.serviceWorker.register('coi-sw.js').then(() => {
+      sessionStorage.setItem('coiReloaded', '1');
+      location.reload();
+    });
+  }
+  var overlay = document.getElementById('overlay');
+  var statusEl = document.getElementById('status');
+  var barEl = document.querySelector('#bar i');
+  var ready = false, clicked = false;
+  function maybeHide() { if (ready && clicked) overlay.style.display = 'none'; }
+  overlay.addEventListener('click', function () {
+    clicked = true;
+    if (Module.pw64Audio && Module.pw64Audio.ctx.state !== 'running') Module.pw64Audio.ctx.resume();
+    if (!ready) statusEl.textContent = 'Starting...';
+    maybeHide();
+  });
+  var Module = {
+    canvas: document.getElementById('canvas'),
+    print: function (t) { console.log(t); },
+    printErr: function (t) { console.log(t); },
+    setStatus: function (t) {
+      var m = /\((\d+(?:\.\d+)?)\/(\d+)\)/.exec(t);
+      if (m) barEl.style.width = (100 * m[1] / m[2]).toFixed(0) + '%';
+      if (t) statusEl.textContent = t.replace(/\(.*\)/, '').trim() || 'Loading...';
+    },
+    onRuntimeInitialized: function () {
+      ready = true;
+      barEl.style.width = '100%';
+      statusEl.textContent = clicked ? 'Starting...' : 'Ready';
+      maybeHide();
+    },
+  };
+  if (!window.crossOriginIsolated && !('serviceWorker' in navigator)) {
+    statusEl.textContent = 'This browser cannot run the threaded build (no cross-origin isolation).';
+  }
+</script>
+{{{ SCRIPT }}}
+</body>
+</html>

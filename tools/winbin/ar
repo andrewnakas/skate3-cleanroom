@@ -1,0 +1,2 @@
+#!/bin/sh
+exec /c/Users/andre/.local/zig-x86_64-windows-0.16.0/zig.exe ar "$@"
