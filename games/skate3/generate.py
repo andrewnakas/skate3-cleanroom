@@ -45,6 +45,9 @@ def regen(key, rgba):
     """rgba HxWx4 (cube maps: (6H)xWx4) -> regenerated, same shape.
     A +-2 LSB per-pixel dither on RGB keeps near-flat textures (normal maps,
     plain colours) from reproducing retail byte runs by coincidence."""
+    # (A sparse every-7th-pixel nudge was tried to keep maps small: it still left
+    # 990 textures sharing 16-B windows with retail, so the dense dither stays.
+    # It roughly doubles texture bytes; only small maps are published.)
     out = from_digest(key, fact(key, np.asarray(rgba))).astype(np.int16)
     rng = np.random.default_rng(int.from_bytes(hashlib.sha1(("dither/" + key).encode()).digest()[:8], "little"))
     out[..., :3] += rng.integers(-2, 3, out[..., :3].shape, dtype=np.int16)
