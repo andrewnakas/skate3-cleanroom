@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skate 3 Rust Engine</title>
+<style>
+  :root { color-scheme: dark; --bg: #0b0f14; --fg: #e6edf3; --muted: #8b98a5; --accent: #3fb6c4; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg);
+    font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; overflow: hidden; }
+  #game { position: fixed; inset: 0; }
+  #bevy { width: 100%; height: 100%; display: block; outline: none; }
+  #overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+    background: var(--bg); z-index: 2; padding: 16px; box-sizing: border-box; }
+  #panel { width: min(460px, 100%); }
+  h1 { font-size: 20px; margin: 0 0 12px; }
+  #status { color: var(--muted); min-height: 2.8em; white-space: pre-wrap; }
+  #status.error { color: #ff7b72; }
+  .bar { height: 6px; background: #1c2530; border-radius: 3px; overflow: hidden; margin: 10px 0 16px; }
+  .bar > div { height: 100%; width: 0; background: var(--accent); transition: width .15s; }
+  #mapbar { position: fixed; bottom: 8px; right: 8px; z-index: 3; display: flex; gap: 6px; align-items: center;
+    background: #0b0f14cc; padding: 4px 8px; border-radius: 6px; font-size: 12px; }
+  select { background: #1c2530; color: var(--fg); border: 1px solid #2d3a47; border-radius: 4px; padding: 2px 4px; }
+  #help { color: var(--muted); font-size: 12px; margin-top: 12px; }
+</style>
+</head>
+<body>
+<div id="game"><canvas id="bevy" tabindex="0"></canvas></div>
+<div id="mapbar"><label for="map">Map</label><select id="map"></select></div>
+<div id="overlay"><div id="panel">
+  <h1>Skate 3 Rust Engine</h1>
+  <div id="status">Starting...</div>
+  <div class="bar"><div id="progress"></div></div>
+  <div id="help">Keyboard = Xbox pad: WASD left stick, arrows right stick, Space A, E B,
+    Shift X, F Y, Z/C triggers, Q/R bumpers, Enter Start. Gamepads work directly.</div>
+</div></div>
+<script type="module" src="./loader.js"></script>
+</body>
+</html>

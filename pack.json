@@ -1,0 +1,63 @@
+{
+ "version": 1,
+ "core": {
+  "size": 153462793,
+  "parts": [
+   "core.pack.part0",
+   "core.pack.part1"
+  ],
+  "files": 516
+ },
+ "maps": [
+  {
+   "name": "BlackBoxPark",
+   "size": 20584501,
+   "parts": [
+    "maps/BlackBoxPark.skate"
+   ]
+  },
+  {
+   "name": "DownTownSkatePark",
+   "size": 47676320,
+   "parts": [
+    "maps/DownTownSkatePark.skate"
+   ]
+  },
+  {
+   "name": "IndustrialSkatePark",
+   "size": 19515355,
+   "parts": [
+    "maps/IndustrialSkatePark.skate"
+   ]
+  },
+  {
+   "name": "MaloofMoneyCup",
+   "size": 54438365,
+   "parts": [
+    "maps/MaloofMoneyCup.skate"
+   ]
+  },
+  {
+   "name": "MegaPark",
+   "size": 14686761,
+   "parts": [
+    "maps/MegaPark.skate"
+   ]
+  },
+  {
+   "name": "SkateSchool",
+   "size": 64090710,
+   "parts": [
+    "maps/SkateSchool.skate"
+   ]
+  },
+  {
+   "name": "StartPark",
+   "size": 10304300,
+   "parts": [
+    "maps/StartPark.skate"
+   ]
+  }
+ ],
+ "default": "StartPark"
+}
