@@ -1,17 +1,17 @@
 {
  "version": 1,
  "engine": {
-  "size": 73002590,
-  "hash": "0633a8a41cb2198f"
+  "size": 73616163,
+  "hash": "353227544b777fca"
  },
  "core": {
-  "size": 153462793,
+  "size": 160308772,
   "parts": [
    "core.pack.part0",
    "core.pack.part1"
   ],
-  "files": 516,
-  "hash": "502d840ab0763961"
+  "files": 550,
+  "hash": "718a2917bbb1c696"
  },
  "maps": [
   {
@@ -21,6 +21,14 @@
     "maps/BlackBoxPark.skate"
    ],
    "hash": "8231cc7e35210dfe"
+  },
+  {
+   "name": "dmjumpline",
+   "size": 11922009,
+   "parts": [
+    "maps/dmjumpline.skate"
+   ],
+   "hash": "5e54b7244d08c8ad"
   },
   {
    "name": "DownTownSkatePark",
