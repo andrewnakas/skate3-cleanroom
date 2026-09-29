@@ -16,3 +16,11 @@
 
 ## For the user
 - Open the live URL in Chrome/Edge, pick a map (bottom right). Keyboard = Xbox pad (WASD left stick, arrows right stick, Space A, E B, Shift X, F Y, Z/C triggers, Q/R bumpers, Enter Start); gamepads work directly. Report FPS and how skating feels.
+
+## Update (2026-09-28, later)
+- Loader caches engine/core/map in Cache Storage (content-hash keys) -> map switches only download the new map.
+- Canvas follows the window (no fixed 1280x800 on web) + Fullscreen button. Engine commits ccb9fa3, 1c5cfdf.
+- User played it; one crash, cause unknown (need Edge F12 console).
+
+## Next session
+Merge the user's engine branch `audio/retail-exact-player-sound` (sound, trick fixes, MX dirt bike mod) into cleanroom-web; clean-room SFX (resynthesised PCM, no music/speech); add `D:\dmjumpline.skate` (SKATE15); chase the crash.
