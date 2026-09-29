@@ -21,13 +21,18 @@
   .bar > div { height: 100%; width: 0; background: var(--accent); transition: width .15s; }
   #mapbar { position: fixed; bottom: 8px; right: 8px; z-index: 3; display: flex; gap: 6px; align-items: center;
     background: #0b0f14cc; padding: 4px 8px; border-radius: 6px; font-size: 12px; }
+  button { background: #1c2530; color: var(--fg); border: 1px solid #2d3a47; border-radius: 4px; padding: 2px 8px; cursor: pointer; font: inherit; }
+  button:hover { border-color: var(--accent); }
+  :fullscreen #mapbar { opacity: 0; transition: opacity .3s; }
+  :fullscreen #mapbar:hover { opacity: 1; }
   select { background: #1c2530; color: var(--fg); border: 1px solid #2d3a47; border-radius: 4px; padding: 2px 4px; }
   #help { color: var(--muted); font-size: 12px; margin-top: 12px; }
 </style>
 </head>
 <body>
 <div id="game"><canvas id="bevy" tabindex="0"></canvas></div>
-<div id="mapbar"><label for="map">Map</label><select id="map"></select></div>
+<div id="mapbar"><label for="map">Map</label><select id="map"></select>
+  <button id="fullscreen" type="button" title="Fullscreen (F11 also works)">Fullscreen</button></div>
 <div id="overlay"><div id="panel">
   <h1>Skate 3 Rust Engine</h1>
   <div id="status">Starting...</div>

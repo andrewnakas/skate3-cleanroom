@@ -13,6 +13,20 @@ globalThis.skateFatal = (message) => {
   overlay.style.display = 'flex';
   status(message, true);
 };
+// Fullscreen the whole page (canvas + map bar); the canvas follows the window
+// size, so the render resizes with it. Focus returns to the game for input.
+const fullscreenButton = document.getElementById('fullscreen');
+fullscreenButton.onclick = async () => {
+  try {
+    if (document.fullscreenElement) await document.exitFullscreen();
+    else await document.documentElement.requestFullscreen({ navigationUI: 'hide' });
+  } catch { /* denied (e.g. iframe without allowfullscreen): keep windowed */ }
+  document.getElementById('bevy').focus();
+};
+document.addEventListener('fullscreenchange', () => {
+  fullscreenButton.textContent = document.fullscreenElement ? 'Exit fullscreen' : 'Fullscreen';
+});
+
 globalThis.skateSelectMap = (name) => {
   const url = new URL(location.href);
   url.searchParams.set('map', name || '__test');
