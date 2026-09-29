@@ -126,7 +126,11 @@ async function main() {
     `core.${pack.core.hash}`,
     ...pack.maps.map((m) => `map-${m.name}.${m.hash}`),
   ].filter(Boolean));
-  const [core, mapBytes, wasmBytes] = await Promise.all([
+  // Phones: iOS reloads a tab that goes much past ~1 GB, so textures are halved
+  // and MSAA is off there (?lite=0 / ?lite=1 override the touch-screen guess).
+  globalThis.SKATE_DEBUGMEM = params.has('debugmem');
+  globalThis.SKATE_LITE = (params.get('lite') ?? (matchMedia('(pointer: coarse)').matches ? '1' : '0')) === '1';
+  let [core, mapBytes, wasmBytes] = await Promise.all([
     cachedParts(cache, key('core', pack.core.hash), pack.core.parts, pack.core.size, tick),
     map ? cachedParts(cache, key(`map-${map.name}`, map.hash), map.parts, map.size, tick) : Promise.resolve(null),
     engine ? cachedParts(cache, key('engine', engine.hash), ['skate3rust_bg.wasm'], engine.size, tick) : Promise.resolve(null),
@@ -138,6 +142,10 @@ async function main() {
     globalThis.SKATE_MAP_NAME = map.name;
     globalThis.SKATE_MAP_BYTES = mapBytes;
   }
+  // The engine copies these into its own memory and clears the globals; do not
+  // keep a second reference here for the whole session (~250 MB).
+  core = null;
+  mapBytes = null;
   if (params.has('debugloop')) {
     let frames = 0;
     const count = () => { frames++; requestAnimationFrame(count); };
@@ -154,7 +162,9 @@ async function main() {
   status('Starting engine (decoding map, compiling shaders)...');
   const { default: init } = await import('./skate3rust.js');
   try {
-    await init(wasmBytes ? { module_or_path: wasmBytes } : undefined);
+    const running = init(wasmBytes ? { module_or_path: wasmBytes } : undefined);
+    wasmBytes = null;
+    await running;
   } catch (e) {
     // Bevy's winit loop unwinds with a control-flow exception on the web; only report real failures.
     if (!String(e).includes('Using exceptions for control flow')) {
