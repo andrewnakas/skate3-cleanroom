@@ -3,12 +3,23 @@
 <head>
 <meta charset="utf-8">
 <link rel="icon" href="data:,">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<!-- Home-screen launch (iPhone Safari has no page fullscreen): no browser bars. -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Skate 3">
+<link rel="manifest" href="manifest.webmanifest">
 <title>Skate 3 Rust Engine</title>
 <style>
   :root { color-scheme: dark; --bg: #0b0f14; --fg: #e6edf3; --muted: #8b98a5; --accent: #3fb6c4; }
   html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg);
-    font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; overflow: hidden; }
+    font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; overflow: hidden;
+    /* The game view never pans, zooms or selects text on touch screens. */
+    touch-action: none; overscroll-behavior: none; -webkit-user-select: none; user-select: none;
+    -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+  #hint { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 5; max-width: min(420px, 90vw);
+    background: #0b0f14ee; border: 1px solid #2d3a47; border-radius: 8px; padding: 14px 16px; display: none; }
   #game { position: fixed; inset: 0; }
   #bevy { width: 100%; height: 100%; display: block; outline: none; }
   #overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
@@ -33,6 +44,7 @@
 <div id="game"><canvas id="bevy" tabindex="0"></canvas></div>
 <div id="mapbar"><label for="map">Map</label><select id="map"></select>
   <button id="fullscreen" type="button" title="Fullscreen (F11 also works)">Fullscreen</button></div>
+<div id="hint"></div>
 <div id="overlay"><div id="panel">
   <h1>Skate 3 Rust Engine</h1>
   <div id="status">Starting...</div>

@@ -16,16 +16,41 @@ globalThis.skateFatal = (message) => {
 // Fullscreen the whole page (canvas + map bar); the canvas follows the window
 // size, so the render resizes with it. Focus returns to the game for input.
 const fullscreenButton = document.getElementById('fullscreen');
+const hint = document.getElementById('hint');
+const showHint = (html) => {
+  hint.innerHTML = html;
+  hint.style.display = 'block';
+  hint.onclick = () => { hint.style.display = 'none'; };
+};
+// Launched from the home screen: already without browser bars.
+if (navigator.standalone || matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches) {
+  fullscreenButton.style.display = 'none';
+}
 fullscreenButton.onclick = async () => {
+  const root = document.documentElement;
+  const request = root.requestFullscreen ?? root.webkitRequestFullscreen;
+  if (!request) {
+    // iPhone Safari only fullscreens videos; a home-screen web app has no bars.
+    showHint('<b>Fullscreen on iPhone</b><br>Safari cannot fullscreen a web page. Tap <b>Share</b> '
+      + '&rarr; <b>Add to Home Screen</b>, then open <b>Skate 3</b> from your home screen: it runs '
+      + 'with no browser bars.<br><br><small>Tap to close.</small>');
+    return;
+  }
   try {
-    if (document.fullscreenElement) await document.exitFullscreen();
-    else await document.documentElement.requestFullscreen({ navigationUI: 'hide' });
+    if (document.fullscreenElement ?? document.webkitFullscreenElement) {
+      await (document.exitFullscreen ?? document.webkitExitFullscreen).call(document);
+    } else {
+      await request.call(root, { navigationUI: 'hide' });
+    }
   } catch { /* denied (e.g. iframe without allowfullscreen): keep windowed */ }
   document.getElementById('bevy').focus();
 };
-document.addEventListener('fullscreenchange', () => {
-  fullscreenButton.textContent = document.fullscreenElement ? 'Exit fullscreen' : 'Fullscreen';
-});
+for (const event of ['fullscreenchange', 'webkitfullscreenchange']) {
+  document.addEventListener(event, () => {
+    const on = document.fullscreenElement ?? document.webkitFullscreenElement;
+    fullscreenButton.textContent = on ? 'Exit fullscreen' : 'Fullscreen';
+  });
+}
 
 globalThis.skateSelectMap = (name) => {
   const url = new URL(location.href);

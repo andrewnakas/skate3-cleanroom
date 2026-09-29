@@ -34,11 +34,15 @@ function install() {
   const pad = document.createElement('div');
   pad.id = 'pad';
   document.body.append(pad);
+  // Edge offsets clear the notch / home indicator in landscape.
+  const inset = { left: 'left', right: 'right', top: 'top', bottom: 'bottom' };
+  const safe = (style) => Object.fromEntries(Object.entries(style).map(([k, v]) =>
+    inset[k] && v.endsWith('px') ? [k, `calc(${v} + env(safe-area-inset-${k}))`] : [k, v]));
   const el = (cls, text, style) => {
     const d = document.createElement('div');
     d.className = cls;
     d.textContent = text;
-    Object.assign(d.style, style);
+    Object.assign(d.style, safe(style));
     pad.append(d);
     return d;
   };
@@ -91,11 +95,11 @@ function install() {
   };
 
   stick({ left: '24px' }, 3, 4);
-  stick({ right: '176px' }, 5, 6);
-  button('btn A', 'A', 0x1000, { right: '72px', bottom: '24px' });
-  button('btn B', 'B', 0x2000, { right: '16px', bottom: '80px' });
-  button('btn X', 'X', 0x4000, { right: '128px', bottom: '80px' });
-  button('btn Y', 'Y', 0x8000, { right: '72px', bottom: '136px' });
+  stick({ right: '24px' }, 5, 6);
+  button('btn A', 'A', 0x1000, { right: '242px', bottom: '24px' });
+  button('btn B', 'B', 0x2000, { right: '186px', bottom: '80px' });
+  button('btn X', 'X', 0x4000, { right: '298px', bottom: '80px' });
+  button('btn Y', 'Y', 0x8000, { right: '242px', bottom: '136px' });
   trigger('LT', 1, { left: '16px', top: '12px' });
   button('btn small', 'LB', 0x0100, { left: '16px', top: '56px' });
   trigger('RT', 2, { right: '16px', top: '12px' });
@@ -108,6 +112,18 @@ function install() {
   if (params.get('touchdemo') === '1') setTimeout(() => setInterval(() => {
     state[0] |= 0x1000; setTimeout(() => { state[0] &= ~0x1000; }, 600);
   }, 1000), 15000);
+
+  for (const g of ['gesturestart', 'gesturechange', 'gestureend']) {
+    document.addEventListener(g, (e) => e.preventDefault(), { passive: false });
+  }
+  document.addEventListener('dblclick', (e) => e.preventDefault(), { passive: false });
+  document.addEventListener('touchmove', (e) => { if (e.touches.length > 1 || (e.scale && e.scale !== 1)) e.preventDefault(); }, { passive: false });
+  let lastEnd = 0;
+  document.addEventListener('touchend', (e) => {
+    const now = performance.now();
+    if (now - lastEnd < 350 && !e.target.closest('#hint, #mapbar')) e.preventDefault();
+    lastEnd = now;
+  }, { passive: false });
 
   const toggle = el('btn small', 'Pad', { left: '50%', bottom: '8px', transform: 'translateX(-50%)', opacity: '0.7' });
   toggle.id = 'padtoggle';
