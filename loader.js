@@ -21,6 +21,42 @@ globalThis.skateSelectMap = (name) => {
   location.href = url.toString();
 };
 
+// Downloads are kept in Cache Storage keyed by the content hash from pack.json,
+// so a map switch (a page reload) only downloads the new map. Entries whose
+// hash is no longer in pack.json are deleted, so a new build replaces them.
+const CACHE = 'skate3-pack';
+
+async function openCache() {
+  try { return await caches.open(CACHE); } catch { return null; }
+}
+
+async function cachedParts(cache, key, parts, total, onBytes) {
+  if (cache && key) {
+    try {
+      const hit = await cache.match(key);
+      if (hit) {
+        const bytes = new Uint8Array(await hit.arrayBuffer());
+        if (bytes.length === total) { onBytes(total); return bytes; }
+      }
+    } catch { /* fall through to the network */ }
+  }
+  const bytes = await fetchParts(parts, total, onBytes);
+  if (cache && key) {
+    // Fire and forget: a full disk or quota error must not block the game.
+    cache.put(key, new Response(bytes, { headers: { 'Content-Type': 'application/octet-stream' } })).catch(() => {});
+  }
+  return bytes;
+}
+
+async function pruneCache(cache, keep) {
+  if (!cache) return;
+  try {
+    for (const request of await cache.keys()) {
+      if (!keep.has(new URL(request.url).pathname.split('/').pop())) await cache.delete(request);
+    }
+  } catch { /* best effort */ }
+}
+
 async function fetchParts(parts, total, onBytes) {
   const out = new Uint8Array(total);
   let at = 0;
@@ -61,17 +97,27 @@ async function main() {
   }
   picker.onchange = () => globalThis.skateSelectMap(picker.value);
 
-  const total = pack.core.size + (map ? map.size : 0);
+  const engine = pack.engine;
+  const total = pack.core.size + (map ? map.size : 0) + (engine ? engine.size : 0);
   let done = 0;
   const tick = (n) => {
     done += n;
     barEl.style.width = `${(100 * done / total).toFixed(1)}%`;
-    status(`Downloading ${map ? map.name : 'test world'}... ${(done / 1e6).toFixed(0)} / ${(total / 1e6).toFixed(0)} MB`);
+    status(`Loading ${map ? map.name : 'test world'}... ${(done / 1e6).toFixed(0)} / ${(total / 1e6).toFixed(0)} MB`);
   };
-  const [core, mapBytes] = await Promise.all([
-    fetchParts(pack.core.parts, pack.core.size, tick),
-    map ? fetchParts(map.parts, map.size, tick) : Promise.resolve(null),
+  const cache = await openCache();
+  const key = (name, hash) => (hash ? `cache/${name}.${hash}` : null);
+  const keep = new Set([
+    engine && `engine.${engine.hash}`,
+    `core.${pack.core.hash}`,
+    ...pack.maps.map((m) => `map-${m.name}.${m.hash}`),
+  ].filter(Boolean));
+  const [core, mapBytes, wasmBytes] = await Promise.all([
+    cachedParts(cache, key('core', pack.core.hash), pack.core.parts, pack.core.size, tick),
+    map ? cachedParts(cache, key(`map-${map.name}`, map.hash), map.parts, map.size, tick) : Promise.resolve(null),
+    engine ? cachedParts(cache, key('engine', engine.hash), ['skate3rust_bg.wasm'], engine.size, tick) : Promise.resolve(null),
   ]);
+  pruneCache(cache, keep);
   globalThis.SKATE_PACK = core;
   globalThis.SKATE_MAP_LIST = pack.maps.map((m) => m.name);
   if (map) {
@@ -94,7 +140,7 @@ async function main() {
   status('Starting engine (decoding map, compiling shaders)...');
   const { default: init } = await import('./skate3rust.js');
   try {
-    await init();
+    await init(wasmBytes ? { module_or_path: wasmBytes } : undefined);
   } catch (e) {
     // Bevy's winit loop unwinds with a control-flow exception on the web; only report real failures.
     if (!String(e).includes('Using exceptions for control flow')) {
