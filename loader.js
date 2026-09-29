@@ -13,6 +13,31 @@ globalThis.skateFatal = (message) => {
   overlay.style.display = 'flex';
   status(message, true);
 };
+// Browsers (iOS above all) start Web Audio suspended until a user gesture, and
+// the engine opens its audio output at startup, before any tap. Track every
+// AudioContext it creates and resume them on the first tap/click/key.
+const audioContexts = [];
+for (const name of ['AudioContext', 'webkitAudioContext']) {
+  const Base = globalThis[name];
+  if (!Base) continue;
+  globalThis[name] = new Proxy(Base, {
+    construct(target, args) {
+      const ctx = Reflect.construct(target, args);
+      audioContexts.push(ctx);
+      console.log(`SKATE_AUDIO context created state=${ctx.state} rate=${ctx.sampleRate}`);
+      return ctx;
+    },
+  });
+}
+const unlockAudio = () => {
+  for (const ctx of audioContexts) {
+    if (ctx.state !== 'running') ctx.resume().then(() => console.log(`SKATE_AUDIO resumed state=${ctx.state}`), () => {});
+  }
+};
+for (const event of ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown']) {
+  addEventListener(event, unlockAudio, { capture: true, passive: true });
+}
+
 // Fullscreen the whole page (canvas + map bar); the canvas follows the window
 // size, so the render resizes with it. Focus returns to the game for input.
 const fullscreenButton = document.getElementById('fullscreen');
