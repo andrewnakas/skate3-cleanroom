@@ -104,7 +104,23 @@ def main(argv):
         run = max_same_run(s, src.get(label, b""))
         if run >= taint.FAIL_RUN:
             bad.append((label, 0, 0, run))
-    bad += [(l, 0, 0, f"{k} sampled 16-B windows") for l, k in hits if k >= 4]
+    # Attribution: a copy concentrates its shared windows in one retail texture;
+    # near-flat coincidences scatter one window each across unrelated ones.
+    suspects = {l: k for l, k in hits if k >= 4}
+    if suspects:
+        want = {l: set(sampled(s).tolist()) for l, s in streams(clean) if l in suspects}
+        worst = {l: (0, "") for l in want}
+        for dl, ds in streams(dirty):
+            dh = set(sampled(ds).tolist())
+            for l, hs in want.items():
+                n_ = len(hs & dh)
+                if n_ > worst[l][0]:
+                    worst[l] = (n_, dl)
+        for l, (n_, dl) in worst.items():
+            if n_ >= 4:
+                bad.append((l, 0, 0, f"{n_} sampled 16-B windows shared with {dl}"))
+            else:
+                print(f"  scattered {l}: {suspects[l]} windows, at most {n_} from one retail texture")
     # whole-file identity check for anything not on the kept list
     dh = {}
     for dp, _, fs in os.walk(dirty):

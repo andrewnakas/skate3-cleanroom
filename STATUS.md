@@ -22,5 +22,14 @@
 - Canvas follows the window (no fixed 1280x800 on web) + Fullscreen button. Engine commits ccb9fa3, 1c5cfdf.
 - User played it; one crash, cause unknown (need Edge F12 console).
 
-## Next session
-Merge the user's engine branch `audio/retail-exact-player-sound` (sound, trick fixes, MX dirt bike mod) into cleanroom-web; clean-room SFX (resynthesised PCM, no music/speech); add `D:\dmjumpline.skate` (SKATE15); chase the crash.
+## Update (2026-09-29)
+- Merged the user's engine branch `audio/retail-exact-player-sound` (1415b5d: trick fixes/scoring, per-wheel rolling, retail-exact player audio, MX dirt bike) into `cleanroom-web` (engine commits 61824d9, 0b1984f).
+- **Freestyle MX bike on web:** the Lua mod runs as a built-in Rust port (`skate-mods/src/native/freestyle_mx.rs`, Lua parity test passes). F9 spawns, E mounts, C throttle, V clutch (web), Q/R + arrows tricks. Model "KTM 450 EXC" by mx-3d, CC BY 4.0 (credited on the page and README).
+- **Web audio:** the desktop's retail-exact audio emulates the retail guest (x86_64, needs retail banks), so the web gets `player_audio_web.rs`: 27 clean sounds (`audio_clean.py`, descriptors -> resynthesis), audio taint 0 failing.
+- **dmjumpline** (user's own SKATE15 map) added; engine falls back to authored rails when a map has no WMET manifest.
+- Taint: 7692 textures, 0 failing (new: failures attributed per retail texture; the one scattered dmjumpline wood texture shares at most 1 window with any retail texture), 0 files identical to retail.
+- Headless: StartPark + dmjumpline render, bike spawns and mounts, audio loads. Driving/feel not verified headless (~1 FPS) - please try it.
+
+## Next
+- User playtest: bike driving on web, sound levels/mix, dmjumpline rails.
+- Crash from 2026-09-28 still needs the Edge F12 console lines if it recurs.

@@ -6,7 +6,10 @@ Layout (engine tools/asset_pipeline/map_writer.py, refresh_textures.py):
 Textures are RGBA8 stored bottom-up (cube maps top-down), method 0 raw / 1 zlib.
 Everything except texture payloads is copied byte for byte.
 """
+import os
 import struct
+import subprocess
+import tempfile
 import zlib
 
 import numpy as np
@@ -50,8 +53,36 @@ def _skip_prefix(r):
     return counts
 
 
+# Newer containers (SKATE15: transformed storage, texture references) are read
+# through the engine's own parser, examples/dump_textures.rs.
+DUMP_EXE = os.environ.get(
+    "SKATE_DUMP_TEXTURES",
+    r"D:\n64work\skate3\target\debug\examples\dump_textures.exe")
+
+
+def _dumped(path):
+    with tempfile.TemporaryDirectory() as d:
+        out = os.path.join(d, "t.bin")
+        subprocess.run([DUMP_EXE, path, out], check=True, capture_output=True)
+        with open(out, "rb") as f:
+            r = _R(f)
+            if r.read(4) != b"SKTX":
+                raise ValueError("bad texture dump")
+            for _ in range(r.u()):
+                name = r.s()
+                w, h, _space = r.u(), r.u(), r.u()
+                px = r.read(w * h * 4)
+                a = np.frombuffer(px, np.uint8).reshape(-1, w, 4)
+                yield name, w, h, a[::-1], False
+
+
 def textures(path):
     """Yield (name, w, h, rgba top-down HxWx4 uint8, cube)."""
+    with open(path, "rb") as f:
+        magic = f.read(8)
+    if magic != b"SKATE14\0":
+        yield from _dumped(path)
+        return
     with open(path, "rb") as f:
         r = _R(f)
         counts = _skip_prefix(r)
