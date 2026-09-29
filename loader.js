@@ -38,6 +38,39 @@ for (const event of ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown']
   addEventListener(event, unlockAudio, { capture: true, passive: true });
 }
 
+// Crash breadcrumbs. iOS silently reloads a tab it kills (memory, GPU), so the
+// page saves a heartbeat every 2 s and, if the last session never said
+// goodbye, shows how it ended on the next load.
+const CRUMB = 'skate3-last-session';
+const session = { map: null, lite: null, started: Date.now(), beat: Date.now(), frames: 0, wasmMB: 0, fps: 0, errors: [] };
+const saveCrumb = (clean) => {
+  try { localStorage.setItem(CRUMB, JSON.stringify({ ...session, clean })); } catch { /* private mode */ }
+};
+let previousCrumb = null;
+try { previousCrumb = JSON.parse(localStorage.getItem(CRUMB) || 'null'); } catch { /* ignore */ }
+addEventListener('error', (e) => { session.errors.push(String(e.message || e.error).slice(0, 160)); saveCrumb(false); });
+addEventListener('unhandledrejection', (e) => { session.errors.push(String(e.reason).slice(0, 160)); saveCrumb(false); });
+addEventListener('pagehide', () => saveCrumb(true));
+(() => {
+  let last = performance.now(), count = 0;
+  const tick = () => { session.frames++; count++; requestAnimationFrame(tick); };
+  requestAnimationFrame(tick);
+  setInterval(() => {
+    const now = performance.now();
+    session.fps = Math.round(count * 1000 / (now - last));
+    last = now; count = 0;
+    session.beat = Date.now();
+    session.wasmMB = globalThis.SKATE_WASM_MB ?? session.wasmMB;
+    saveCrumb(false);
+  }, 2000);
+})();
+const describeCrumb = (c) => {
+  const secs = Math.round((c.beat - c.started) / 1000);
+  return `Last session (${c.map ?? '?'}${c.lite ? ', lite' : ''}) ended unexpectedly after `
+    + `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}: ${c.frames} frames, ~${c.fps} fps, `
+    + `engine memory ${c.wasmMB} MB${c.errors.length ? `, errors: ${c.errors.slice(-2).join(' | ')}` : ''}.`;
+};
+
 // Fullscreen the whole page (canvas + map bar); the canvas follows the window
 // size, so the render resizes with it. Focus returns to the game for input.
 const fullscreenButton = document.getElementById('fullscreen');
@@ -179,7 +212,17 @@ async function main() {
   // Phones: iOS reloads a tab that goes much past ~1 GB, so textures are halved
   // and MSAA is off there (?lite=0 / ?lite=1 override the touch-screen guess).
   globalThis.SKATE_DEBUGMEM = params.has('debugmem');
+  session.map = map ? map.name : 'test world';
   globalThis.SKATE_LITE = (params.get('lite') ?? (matchMedia('(pointer: coarse)').matches ? '1' : '0')) === '1';
+  session.lite = globalThis.SKATE_LITE;
+  if (previousCrumb && !previousCrumb.clean && previousCrumb.frames > 0) {
+    const note = document.createElement('div');
+    note.id = 'lastcrash';
+    note.style.cssText = 'color:#ffa657;font-size:12px;margin-top:8px';
+    note.textContent = describeCrumb(previousCrumb);
+    document.getElementById('panel').append(note);
+    console.log(`SKATE_LAST_SESSION ${note.textContent}`);
+  }
   let [core, mapBytes, wasmBytes] = await Promise.all([
     cachedParts(cache, key('core', pack.core.hash), pack.core.parts, pack.core.size, tick),
     map ? cachedParts(cache, key(`map-${map.name}`, map.hash), map.parts, map.size, tick) : Promise.resolve(null),
