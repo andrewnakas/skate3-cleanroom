@@ -31,7 +31,7 @@ EVENTS = [
     (("pop", "ollie"), "pop", "oneshot", 4, -4.0),
     (("catch",), "catch", "oneshot", 3, -7.0),
     (("push", "kick"), "push", "oneshot", 3, -10.0),
-    (("land",), "land_impact", "oneshot", 3, -3.0),
+    (("land",), "land_impact", "oneshot", 4, -3.0),
     (("bail", "clatter", "fall"), "bail", "oneshot", 2, -4.0),
     (("roll_smooth", "roll_concrete", "smooth concrete", "rolling concrete"), "roll_smooth", "loop", 1, -24.0),
     (("rough", "asphalt"), "roll_rough", "loop", 1, -24.0),
@@ -164,7 +164,10 @@ def main(argv):
         if r:
             by_role.setdefault(r, []).append(s)
     credits = []
-    for (role, kind, variants, level), items in by_role.items():
+    extra_landings = []
+    # Ollie clips first, so their landings are ready when land_impact is built.
+    order = sorted(by_role.items(), key=lambda kv: kv[0][0] != "pop")
+    for (role, kind, variants, level), items in order:
         takes = []
         for s in items:
             x = _load(os.path.join(src_dir, s["file"]), "M/S" in (s.get("notes") or ""))
@@ -172,6 +175,8 @@ def main(argv):
                 takes.append((np.sqrt((x ** 2).mean()), _loop(x), s))
                 continue
             hits = sorted(_onsets(x))  # in time order
+            if role == "land_impact" and (s.get("notes") or "").startswith("drop"):
+                continue  # a dropped board is not a ridden landing
             if role == "pop" and hits:
                 # An ollie clip is pop ... landing: the pop is the first hit.
                 hits = hits[:1]
@@ -180,6 +185,14 @@ def main(argv):
                 hits = hits[1:-1]
             for start, peak in hits:
                 takes.append((peak, _cut(x, start, 0.35 if role in ("pop", "catch") else 0.6), s))
+            if role == "pop" and len(sorted(_onsets(x))) > 1:
+                # The loudest hit after the pop in an ollie clip is its landing.
+                after = [h for h in sorted(_onsets(x))[1:] if h[0] > sorted(_onsets(x))[0][0] + 0.15 * RATE]
+                if after:
+                    start, peak = max(after, key=lambda h: h[1])
+                    extra_landings.append((peak, _cut(x, start, 0.6), s))
+        if role == "land_impact":
+            takes += extra_landings
         takes.sort(key=lambda t: -t[0])
         takes = takes[:variants]
         if not takes:
