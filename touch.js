@@ -134,12 +134,29 @@ function install() {
   layout();
   addEventListener('resize', layout);
   trigger('LT', 1, { left: '16px', top: '12px' });
-  button('btn small', 'LB', 0x0100, { left: '16px', top: '56px' });
+  const lb = button('btn small', 'LB', 0x0100, { left: '16px', top: '56px' });
   trigger('RT', 2, { right: '16px', top: '12px' });
   button('btn small', 'RB', 0x0200, { right: '88px', top: '12px' });
   button('btn small', 'Start', 0x0010, { left: '96px', top: '12px' });
   button('btn small', 'Back', 0x0020, { left: '96px', top: '56px' });
   key('Bike', 'F9', 120, { right: '160px', top: '12px' });
+
+  // Session marker, as on the controller: LB + D-pad down (tap) sets it,
+  // LB + D-pad up (hold) goes back to it. LB goes down a moment before the
+  // D-pad bit so the engine sees the modifier already held.
+  const session = (text, dpad, style) => {
+    let timer = 0;
+    hold(el('btn small', text, style), () => {
+      state[0] |= 0x0100;
+      timer = setTimeout(() => { state[0] |= dpad; }, 60);
+    }, () => {
+      clearTimeout(timer);
+      state[0] &= ~dpad;
+      if (!lb.classList.contains('on')) state[0] &= ~0x0100;
+    });
+  };
+  session('Set', 0x0002, { right: '160px', top: '56px' });
+  session('Go to', 0x0001, { right: '88px', top: '56px' });
 
   // Dev check: ?touchdemo=1 pushes (A, 0.6 s of every second) from 15 s, with no hands.
   if (params.get('touchdemo') === '1') setTimeout(() => setInterval(() => {
