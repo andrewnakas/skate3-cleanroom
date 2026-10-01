@@ -146,17 +146,30 @@ function install() {
   // D-pad bit so the engine sees the modifier already held.
   const session = (text, dpad, style) => {
     let timer = 0;
-    hold(el('btn small', text, style), () => {
+    const down = () => {
       state[0] |= 0x0100;
       timer = setTimeout(() => { state[0] |= dpad; }, 60);
-    }, () => {
+    };
+    const up = () => {
       clearTimeout(timer);
       state[0] &= ~dpad;
       if (!lb.classList.contains('on')) state[0] &= ~0x0100;
-    });
+    };
+    hold(el('btn small', text, style), down, up);
+    return { down, up };
   };
-  session('Set', 0x0002, { right: '160px', top: '56px' });
-  session('Go to', 0x0001, { right: '88px', top: '56px' });
+  // Left side, next to Start/Back, clear of the map bar and the face buttons.
+  const setMarker = session('Set', 0x0002, { left: '176px', top: '12px' });
+  const goMarker = session('Go to', 0x0001, { left: '176px', top: '56px' });
+
+  // Dev check: ?sessiondemo=1 sets the marker at 20 s, pushes forward 25-35 s,
+  // then holds Go to 38-50 s, with no hands.
+  if (params.get('sessiondemo') === '1') {
+    const at = (sec, fn) => setTimeout(fn, sec * 1000);
+    at(20, setMarker.down); at(23, setMarker.up);
+    at(25, () => { state[4] = 1; }); at(35, () => { state[4] = 0; });
+    at(38, goMarker.down); at(50, goMarker.up);
+  }
 
   // Dev check: ?touchdemo=1 pushes (A, 0.6 s of every second) from 15 s, with no hands.
   if (params.get('touchdemo') === '1') setTimeout(() => setInterval(() => {
