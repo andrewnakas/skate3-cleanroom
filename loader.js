@@ -1,5 +1,7 @@
 // Downloads core.pack + one map (see tools/web_pack.py), hands the bytes to
 // the wasm module as globals (crates/skate-game/src/web.rs), then starts it.
+// The map is one of the pack's own, a community map fetched from
+// skatemods.com (?smap=<id>), any .skate URL (?mapurl=) or a local file.
 const statusEl = document.getElementById('status');
 const barEl = document.getElementById('progress');
 const overlay = document.getElementById('overlay');
@@ -110,13 +112,134 @@ for (const event of ['fullscreenchange', 'webkitfullscreenchange']) {
   });
 }
 
-globalThis.skateSelectMap = (name) => {
+// Every way of choosing a map is a page reload with one of these parameters
+// (the engine loads its map once, at startup).
+const MAP_PARAMS = ['map', 'smap', 'mapurl', 'local'];
+function go(param, value) {
   const url = new URL(location.href);
-  url.searchParams.set('map', name || '__test');
-  url.searchParams.delete('teleport');
-  url.searchParams.delete('args');
+  for (const name of [...MAP_PARAMS, 'teleport', 'args']) url.searchParams.delete(name);
+  url.searchParams.set(param, value);
   location.href = url.toString();
-};
+}
+globalThis.skateSelectMap = (name) => go('map', name || '__test');
+
+// Community maps. The catalog is skatemods.com (approved maps that have a
+// .skate conversion); ?skatemods=<origin> points at another instance (tests).
+// A map can also come from any URL that allows cross-origin reads (?mapurl=)
+// or from a .skate file on this device ("Open .skate file").
+const SKATEMODS = (new URLSearchParams(location.search).get('skatemods') ?? 'https://skatemods.com').replace(/\/+$/, '');
+const LOCAL_KEY = 'cache/local-map';
+
+function safeName(text, taken) {
+  let name = String(text ?? '').normalize('NFKD').replace(/[^A-Za-z0-9_-]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 48) || 'CommunityMap';
+  // A built-in map's name would attach that map's props, sky and teleports.
+  while (taken.has(name)) name += '_community';
+  return name;
+}
+
+async function shortHash(text) {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return [...new Uint8Array(digest).slice(0, 8)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function getJson(url) {
+  const response = await fetch(url, { headers: { Accept: 'application/json' } });
+  if (!response.ok) throw new Error(`${new URL(url).host}: HTTP ${response.status}`);
+  return response.json();
+}
+
+/** The map the URL asks for, if it is not one of the pack's own: {name, label, key, size, url}. */
+async function externalMap(params, taken) {
+  const id = params.get('smap');
+  if (id) {
+    const detail = await getJson(`${SKATEMODS}/api/maps/${encodeURIComponent(id)}`);
+    const file = (detail.files ?? []).find((f) => f.kind === 'skate');
+    if (!file) throw new Error(`"${detail.title}" has no .skate conversion on skatemods.com yet.`);
+    return {
+      name: safeName(detail.title, taken),
+      label: `${detail.title} by ${detail.authorCredit}`,
+      credit: `${detail.title} by ${detail.authorCredit} (${detail.licenseLabel ?? detail.license}), from skatemods.com`,
+      page: `${SKATEMODS}/maps/view/?id=${encodeURIComponent(id)}`,
+      key: `smap-${file.id}`,
+      size: file.bytes,
+      url: `${SKATEMODS}/api/maps/${encodeURIComponent(id)}/files/${encodeURIComponent(file.id)}?cors=1`,
+    };
+  }
+  const link = params.get('mapurl');
+  if (link) {
+    const url = new URL(link, location.href);
+    if (url.protocol !== 'https:' && url.hostname !== 'localhost' && url.hostname !== '127.0.0.1') {
+      throw new Error('?mapurl= must be an https:// address.');
+    }
+    const file = decodeURIComponent(url.pathname.split('/').pop() || 'map').replace(/\.skate$/i, '');
+    return { name: safeName(file, taken), label: `${file} (${url.host})`, key: `url-${await shortHash(url.href)}`, size: 0, url: url.href };
+  }
+  const local = params.get('local');
+  if (local) return { name: safeName(local, taken), label: `${local} (your file)`, key: 'local-map', size: 0, url: null };
+  return null;
+}
+
+/** Download a map whose size may be unknown; checks that it is a .skate container. */
+async function fetchMap(map, cache, onBytes, onTotal) {
+  const key = `cache/${map.key}`;
+  if (cache) {
+    try {
+      const hit = await cache.match(key);
+      if (hit) {
+        const bytes = new Uint8Array(await hit.arrayBuffer());
+        if (!map.size || bytes.length === map.size) { onTotal(bytes.length); onBytes(bytes.length); return bytes; }
+      }
+    } catch { /* fall through to the network */ }
+  }
+  if (!map.url) throw new Error('That file is no longer stored in this browser. Choose "Open .skate file" again.');
+  let response;
+  try {
+    response = await fetch(map.url);
+  } catch (e) {
+    throw new Error(`Could not download ${map.label}: the server did not answer or does not allow this page to read it (${e.message}).`);
+  }
+  if (!response.ok) throw new Error(`Could not download ${map.label}: HTTP ${response.status}`);
+  const declared = map.size || Number(response.headers.get('Content-Length')) || 0;
+  onTotal(declared);
+  const chunks = [];
+  let got = 0;
+  const reader = response.body.getReader();
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    got += value.length;
+    onBytes(value.length);
+  }
+  if (map.size && got !== map.size) throw new Error(`Downloaded ${got} of ${map.size} bytes of ${map.label}.`);
+  const bytes = new Uint8Array(got);
+  let at = 0;
+  for (const chunk of chunks) { bytes.set(chunk, at); at += chunk.length; }
+  if (!declared) onTotal(got);
+  checkSkate(bytes, map.label);
+  if (cache) cache.put(key, new Response(bytes, { headers: { 'Content-Type': 'application/octet-stream' } })).catch(() => {});
+  return bytes;
+}
+
+function checkSkate(bytes, label) {
+  const magic = String.fromCharCode(...bytes.subarray(0, 5));
+  if (magic !== 'SKATE') throw new Error(`${label} is not a .skate map (it starts with "${magic.replace(/[^ -~]/g, '?')}").`);
+}
+
+/** Fill the picker's community group from the skatemods.com catalog. */
+async function listCommunity(group, currentId) {
+  const note = (text) => { const o = new Option(text, '', false, false); o.disabled = true; group.replaceChildren(o); };
+  note('loading...');
+  try {
+    const { maps } = await getJson(`${SKATEMODS}/api/maps`);
+    const playable = (maps ?? []).filter((m) => (m.kinds ?? []).includes('skate'));
+    if (!playable.length) { note('none published yet'); return; }
+    group.replaceChildren(...playable.map((m) => new Option(`${m.title} by ${m.author_credit}`, `smap:${m.id}`, false, m.id === currentId)));
+  } catch (e) {
+    console.warn(`skatemods catalog: ${e.message}`);
+    note('catalog unavailable');
+  }
+}
 
 // Downloads are kept in Cache Storage keyed by the content hash from pack.json,
 // so a map switch (a page reload) only downloads the new map. Entries whose
@@ -185,34 +308,68 @@ async function main() {
   }
   const pack = await (await fetch('pack.json', { cache: 'no-cache' })).json();
   const params = new URLSearchParams(location.search);
+  const cache = await openCache();
+  const builtIn = new Set(['__test', ...pack.maps.map((m) => m.name)]);
+  // A community map, a URL or a local file; null for the pack's own maps.
+  const external = await externalMap(params, builtIn);
   const wanted = params.get('map') ?? pack.default;
-  const map = pack.maps.find((m) => m.name === wanted) ?? null;
+  const map = external ? null : pack.maps.find((m) => m.name === wanted) ?? null;
 
-  picker.add(new Option('Test world', '__test', false, map === null));
+  picker.add(new Option('Test world', '__test', false, !external && map === null));
   for (const m of pack.maps) {
     picker.add(new Option(`${m.name} (${(m.size / 1e6).toFixed(0)} MB)`, m.name, false, m === map));
   }
-  picker.onchange = () => globalThis.skateSelectMap(picker.value);
+  if (external && !params.get('smap')) picker.add(new Option(external.label, '', false, true));
+  const community = document.createElement('optgroup');
+  community.label = 'Community maps (skatemods.com)';
+  picker.add(community);
+  listCommunity(community, params.get('smap'));
+  const more = document.createElement('optgroup');
+  more.label = 'Your own';
+  more.append(new Option('Open .skate file...', 'open-file'));
+  picker.add(more);
+  const fileInput = document.getElementById('mapfile');
+  picker.onchange = () => {
+    const value = picker.value;
+    if (value === 'open-file') fileInput.click();
+    else if (value.startsWith('smap:')) go('smap', value.slice(5));
+    else if (value) globalThis.skateSelectMap(value);
+  };
+  fileInput.onchange = async () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+    try {
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      checkSkate(bytes, file.name);
+      if (!cache) throw new Error('This browser has storage switched off (private window?), so the file cannot be kept across the reload.');
+      await cache.put(LOCAL_KEY, new Response(bytes, { headers: { 'Content-Type': 'application/octet-stream' } }));
+      go('local', file.name.replace(/\.skate$/i, ''));
+    } catch (e) {
+      globalThis.skateFatal(String(e.message || e));
+    }
+  };
 
   const engine = pack.engine;
-  const total = pack.core.size + (map ? map.size : 0) + (engine ? engine.size : 0);
+  let total = pack.core.size + (map ? map.size : 0) + (external ? external.size : 0) + (engine ? engine.size : 0);
   let done = 0;
+  const shown = external ? external.label : map ? map.name : 'test world';
   const tick = (n) => {
     done += n;
-    barEl.style.width = `${(100 * done / total).toFixed(1)}%`;
-    status(`Loading ${map ? map.name : 'test world'}... ${(done / 1e6).toFixed(0)} / ${(total / 1e6).toFixed(0)} MB`);
+    barEl.style.width = `${Math.min(100, 100 * done / total).toFixed(1)}%`;
+    status(`Loading ${shown}... ${(done / 1e6).toFixed(0)} / ${(total / 1e6).toFixed(0)} MB`);
   };
-  const cache = await openCache();
   const key = (name, hash) => (hash ? `cache/${name}.${hash}` : null);
   const keep = new Set([
     engine && `engine.${engine.hash}`,
     `core.${pack.core.hash}`,
     ...pack.maps.map((m) => `map-${m.name}.${m.hash}`),
+    // The community map being played stays cached; others are dropped.
+    external && external.key,
   ].filter(Boolean));
   // Phones: iOS reloads a tab that goes much past ~1 GB, so textures are halved
   // and MSAA is off there (?lite=0 / ?lite=1 override the touch-screen guess).
   globalThis.SKATE_DEBUGMEM = params.has('debugmem');
-  session.map = map ? map.name : 'test world';
+  session.map = shown;
   globalThis.SKATE_LITE = (params.get('lite') ?? (matchMedia('(pointer: coarse)').matches ? '1' : '0')) === '1';
   session.lite = globalThis.SKATE_LITE;
   if (previousCrumb && !previousCrumb.clean && previousCrumb.frames > 0) {
@@ -225,15 +382,25 @@ async function main() {
   }
   let [core, mapBytes, wasmBytes] = await Promise.all([
     cachedParts(cache, key('core', pack.core.hash), pack.core.parts, pack.core.size, tick),
-    map ? cachedParts(cache, key(`map-${map.name}`, map.hash), map.parts, map.size, tick) : Promise.resolve(null),
+    map ? cachedParts(cache, key(`map-${map.name}`, map.hash), map.parts, map.size, tick)
+      : external ? fetchMap(external, cache, tick, (n) => { total += n - external.size; external.size = n; }) : Promise.resolve(null),
     engine ? cachedParts(cache, key('engine', engine.hash), ['skate3rust_bg.wasm'], engine.size, tick) : Promise.resolve(null),
   ]);
   pruneCache(cache, keep);
   globalThis.SKATE_PACK = core;
   globalThis.SKATE_MAP_LIST = pack.maps.map((m) => m.name);
-  if (map) {
-    globalThis.SKATE_MAP_NAME = map.name;
+  if (map || external) {
+    globalThis.SKATE_MAP_NAME = (map ?? external).name;
     globalThis.SKATE_MAP_BYTES = mapBytes;
+  }
+  if (external) {
+    console.log(`SKATE_COMMUNITY_MAP name=${external.name} bytes=${mapBytes.length} source=${external.url ?? 'local file'}`);
+    const credit = document.getElementById('mapcredit');
+    if (external.credit) {
+      credit.textContent = external.credit;
+      if (external.page) credit.href = external.page;
+      credit.hidden = false;
+    }
   }
   // The engine copies these into its own memory and clears the globals; do not
   // keep a second reference here for the whole session (~250 MB).

@@ -5,21 +5,21 @@
   "hash": "d60e23310332b26f"
  },
  "core": {
-  "size": 94768043,
+  "size": 94731967,
   "parts": [
    "core.pack"
   ],
   "files": 534,
-  "hash": "d48a8942b08fb88e"
+  "hash": "dd0439e72d15f9e4"
  },
  "maps": [
   {
    "name": "BlackBoxPark",
-   "size": 20584501,
+   "size": 20478384,
    "parts": [
     "maps/BlackBoxPark.skate"
    ],
-   "hash": "8231cc7e35210dfe"
+   "hash": "52eef3fa61459dc1"
   },
   {
    "name": "dmjumpline",
@@ -31,51 +31,51 @@
   },
   {
    "name": "DownTownSkatePark",
-   "size": 47676320,
+   "size": 47447606,
    "parts": [
     "maps/DownTownSkatePark.skate"
    ],
-   "hash": "e8d167b1856fae63"
+   "hash": "458b1ca5d52ca0c8"
   },
   {
    "name": "IndustrialSkatePark",
-   "size": 19515355,
+   "size": 19417243,
    "parts": [
     "maps/IndustrialSkatePark.skate"
    ],
-   "hash": "9f85e0836b5fb081"
+   "hash": "b4c75efba31eef3a"
   },
   {
    "name": "MaloofMoneyCup",
-   "size": 54438365,
+   "size": 54267223,
    "parts": [
     "maps/MaloofMoneyCup.skate"
    ],
-   "hash": "cb57491b03922e3c"
+   "hash": "03d1bcf921d3fcd7"
   },
   {
    "name": "MegaPark",
-   "size": 14686761,
+   "size": 14612737,
    "parts": [
     "maps/MegaPark.skate"
    ],
-   "hash": "9932a7dc0b3ef196"
+   "hash": "0c540ff1173e4dec"
   },
   {
    "name": "SkateSchool",
-   "size": 64090710,
+   "size": 63493014,
    "parts": [
     "maps/SkateSchool.skate"
    ],
-   "hash": "2b4783ed715b8e31"
+   "hash": "900c069ca53dae48"
   },
   {
    "name": "StartPark",
-   "size": 10304300,
+   "size": 10208291,
    "parts": [
     "maps/StartPark.skate"
    ],
-   "hash": "4b60d43e2a711443"
+   "hash": "118786f479dd1e4f"
   }
  ],
  "default": "StartPark"
