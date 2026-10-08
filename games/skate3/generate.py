@@ -24,7 +24,7 @@ from PIL import Image
 
 from cleanroom.decomp.spec import texture_fact
 from cleanroom.decomp.gen import from_digest
-from games.skate3 import skate14
+from games.skate3 import geom, skate14
 
 KEEP_EXT = {".abin", ".stategraph", ".cfg", ".pat", ".shk", ".irradiance"}
 KEEP_JSON_DIRS = ("assets/private/stock/", "assets/private/native-skies/", "assets/private/native-props/",
@@ -191,6 +191,9 @@ def main(argv):
             elif kind == "skate":
                 n = skate14.rewrite(p, out, lambda name, w, h, a, cube, rel=rel: regen(f"{rel}#{name}", a))
                 counts["skate_textures"] = counts.get("skate_textures", 0) + n
+                # visual geometry, collision container and manifest (geom.py)
+                if geom.rewrite(out, out, rel):
+                    counts["skate_geometry"] = counts.get("skate_geometry", 0) + 1
             elif kind == "rgba":
                 raw = open(p, "rb").read()
                 w, h = dims.get(rel) or dims.get(f) or guess_dims(len(raw))

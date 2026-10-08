@@ -33,3 +33,15 @@
 ## Next
 - User playtest: bike driving on web, sound levels/mix, dmjumpline rails.
 - Crash from 2026-09-28 still needs the Edge F12 console lines if it recurs.
+
+## Update (2026-10-08): geometry regenerated, community maps
+- **Visual geometry is no longer retail mesh data.** `games/skate3/geom.py` rewrites every SKATE14 file (10 maps, 5 prop sets, 3 backdrops) and `skater.glb`: positions on our own 0.37 mm lattice (0.13 mm for the skater), other diagonal on every nearly flat quad (70% of 5.0M triangles), normals/tangent frames recomputed, UVs re-quantised, new order. Collision values kept exactly but re-encoded in our own container (verified equal triangle lists); WMET trimmed to rail identities (StartPark 160 KB -> 120 B). Hooked into `generate.py`.
+- **Geometry taint** `games/skate3/geom_taint.py`: 19 files, 0 failing (no shared 32-byte run in vertices, indices, collision, model accessors). Texture/audio taint unchanged.
+- **Checked in headless Edge (WebGPU):** StartPark, MegaPark, SkateSchool load with the same collision triangle and rail counts as the old build (12533 / 12170 / 91790 triangles, 210 splines) and render the same within run-to-run noise.
+- **Community maps in the picker** (engine `web/loader.js`): skatemods.com catalog (`?smap=<id>`), any CORS-readable URL (`?mapurl=`), local file. Checked end to end against a local copy of the skatemods API with dmjumpline uploaded through the real upload -> runner -> approve flow.
+- **Needs deploying on skatemods.com before the catalog shows up live:** branch `engine-map-import` of andrewnakas/skatemods (CORS on the public map routes + `?cors=1` streaming for files stored as GitHub release assets, which have no CORS headers). Until then the picker shows "catalog unavailable". The live catalog also has 0 approved maps today.
+- Not changed, still kept as facts: animations (ABIN), state graphs, VLT tuning, rails, skeleton, HUD/sky layout, irradiance probes, collision values.
+
+## For the user (2026-10-08)
+- Skate the 7 retail parks and look for visual seams, flicker on decals/thin layers, or lighting that looks off (trees and curved ramps are where recomputed normals differ most). Skating itself should feel identical: collision is bit-for-bit the same.
+- Phones: triangle counts are unchanged, so performance should be too.
