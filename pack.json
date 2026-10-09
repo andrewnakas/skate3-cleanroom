@@ -46,6 +46,14 @@
    "hash": "b4c75efba31eef3a"
   },
   {
+   "name": "KenneyPark",
+   "size": 50292,
+   "parts": [
+    "maps/KenneyPark.skate"
+   ],
+   "hash": "38040e00d2f0c424"
+  },
+  {
    "name": "MaloofMoneyCup",
    "size": 54267223,
    "parts": [
