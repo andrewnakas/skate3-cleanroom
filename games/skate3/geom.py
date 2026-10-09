@@ -688,6 +688,10 @@ def rewrite(src, dst, key):
     prefix, counts_at, counts, v, idx, cb, rails, ext = sections
     if any(tag == b"WMET" and trim_wmet(data) is None for tag, _, data in ext):
         return {"already": True}
+    # Every file from the retail conversion carries a WMET manifest. One without
+    # it is an original map (e.g. the CC0 Kenney park): nothing to regenerate.
+    if not any(tag == b"WMET" for tag, _, _ in ext):
+        return {"already": True, "original": True}
     v2, idx2, stats = regen_mesh(v, idx, key)
     counts = list(counts)
     counts[2], counts[3] = len(v2), idx2.size
@@ -732,12 +736,19 @@ def main(argv):
             glb = f.endswith(".glb") and rel.startswith("assets/private/")
             if not (f.endswith(".skate") or glb) or (only and only not in rel):
                 continue
-            s = (rewrite_glb if glb else rewrite)(p, p + ".dry" if dry else p, rel)
+            try:
+                s = (rewrite_glb if glb else rewrite)(p, p + ".dry" if dry else p, rel)
+            except ValueError as e:
+                # Authored collision or rails: not the retail conversion's layout,
+                # so an original map. Said out loud so a broken retail file shows.
+                total["skipped"] += 1
+                print(f"  {rel}: not the retail pipeline's layout ({e}), left as is")
+                continue
             if dry and os.path.exists(p + ".dry"):
                 os.remove(p + ".dry")
             if s is None or s.get("already"):
                 total["skipped"] += 1
-                print(f"  {rel}: " + ("already regenerated" if s else "not SKATE14 (the author's own map), left as is"))
+                print(f"  {rel}: " + ("original map, left as is" if s and s.get("original") else "already regenerated" if s else "not SKATE14 (the author's own map), left as is"))
                 continue
             total["files"] += 1
             for k in ("tris", "tris_retessellated", "verts"):

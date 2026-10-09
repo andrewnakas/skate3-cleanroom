@@ -19,6 +19,7 @@ This is the Skate 3 Rust/Bevy engine rewrite ([skate-3-rust-engine](https://gith
 | Music, speech | Not shipped. |
 | Everything else from the disc | Dropped |
 | `dmjumpline` map | The author's own map (converted from a Descenders mod with their own tool); shipped as-is and taint-scanned like everything else. |
+| `KenneyPark` map | An original park assembled from Kenney's Mini Skate kit (CC0, kenney.nl) with skatemods Map Studio; shipped as-is. |
 | Freestyle MX bike mod | Engine SDK example; the Lua script runs as a built-in Rust port on the web. Model: "KTM 450 EXC" by mx-3d (Sketchfab), CC BY 4.0. |
 
 Geometry taint scan (`geom_taint.py`): the vertex buffer, index buffer and collision container of every regenerated file are compared with the private pack. **0 failing**: no shared 32-byte run; 615 of 6.6 million vertices (0.009%) keep the same three position floats (far-away backdrop corners where a float cannot hold a sub-millimetre change).

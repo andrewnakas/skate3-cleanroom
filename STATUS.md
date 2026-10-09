@@ -51,3 +51,10 @@
 - Built: engine `multiplayer::transport::Web` + `web/net.js` (engine commit on `cleanroom-web`), room relay `relay/` (Durable Object, 10 per room, tests pass). Two headless Edge tabs in one room on StartPark: both "Connected 2/10, synced characters", RTT 66-90 ms, ~18 kB/s each way, spawns 1.5 m apart, no contacts.
 - **Not deployed:** `cd relay && npx wrangler deploy` (route skatemods.com/rooms/*). The auto-mode permission check blocked me from deploying to Cloudflare. Until it is deployed the site hides the Multiplayer button.
 - Free plan note: Durable Object WebSocket messages count 20:1 against 100k requests/day, roughly 15-20 player-hours a day at ~30 packets/s per player.
+
+## Update (2026-10-09)
+- Relay: public room directory (`/list`), page room menu (private / public / join listed). Tested with two headless tabs.
+- Maps found in private andrewnakas/skatemods-testdata (release test-data): `kenney_park` (CC0 Kenney kit, original park) + JumpCity and Sunbad Art Gallery (community maps, marked retail-derived, not public). KenneyPark added as a built-in map (9 maps on the site). JumpCity (3.6M triangles, 95 MB) and Sunbad load through `?mapurl=` at ~50 FPS in headless Edge; they stay local in D:
+64work\skatemods-testdata.
+- geom.py leaves original maps (no WMET, or authored collision layout) alone.
+- Still blocked for Claude (auto-mode permission): `wrangler deploy` of relay/ and of skatemods apps/api, and merging skatemods PR #1.
