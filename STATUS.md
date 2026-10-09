@@ -45,3 +45,9 @@
 ## For the user (2026-10-08)
 - Skate the 7 retail parks and look for visual seams, flicker on decals/thin layers, or lighting that looks off (trees and curved ramps are where recomputed normals differ most). Skating itself should feel identical: collision is bit-for-bit the same.
 - Phones: triangle counts are unchanged, so performance should be too.
+
+## Update (2026-10-08, later): browser multiplayer
+- Looked at other Skate 3 projects: Splash250's GPL fork of the same engine has a dedicated UDP server (16-64 players, accounts, voice, Lua/JS/.NET resources, RP showcase, ~97k lines on newer upstream); SK8-ENGINE upstream has the peer/Steam lobby our branch already carries; chasmlol/2010-rust-rewrite-mashup (Apache-2.0) has its own net crate. All UDP or Steam, none browser-capable.
+- Built: engine `multiplayer::transport::Web` + `web/net.js` (engine commit on `cleanroom-web`), room relay `relay/` (Durable Object, 10 per room, tests pass). Two headless Edge tabs in one room on StartPark: both "Connected 2/10, synced characters", RTT 66-90 ms, ~18 kB/s each way, spawns 1.5 m apart, no contacts.
+- **Not deployed:** `cd relay && npx wrangler deploy` (route skatemods.com/rooms/*). The auto-mode permission check blocked me from deploying to Cloudflare. Until it is deployed the site hides the Multiplayer button.
+- Free plan note: Durable Object WebSocket messages count 20:1 against 100k requests/day, roughly 15-20 player-hours a day at ~30 packets/s per player.

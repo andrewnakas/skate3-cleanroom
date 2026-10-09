@@ -37,6 +37,11 @@ Taint scan: all regenerated textures (7692 incl. dmjumpline) and all 27 sounds a
 ## Controls
 See `docs/web.md` in the engine repo. Keyboard and browser gamepads are supported. Change maps with the picker, or add `?map=Name` to the URL.
 
+## Multiplayer
+Press **Multiplayer** next to the map picker to open a room, then send the copied invite link (`?room=CODE`). Up to 10 players skate the same map together: positions, full ragdolls, poses, tricks and player collisions use the engine's own skate-net session. The browser can't open UDP sockets, so datagrams go over a WebSocket to a small room relay (`relay/`, a Cloudflare Durable Object; it only forwards bytes between room members). The first player in a room hosts; if they leave, the others reload to continue.
+
+Other Skate 3 projects with multiplayer (October 2026), for reference: [Splash250/skate-3-rust-engine](https://github.com/Splash250/skate-3-rust-engine) adds a 16-64 player dedicated UDP server, accounts, voice and scripted resources to the same engine (GPL-3.0, like ours); [SK8-ENGINE](https://github.com/SK8-ENGINE/skate-3-rust-engine) has the peer/Steam lobby code this build uses. Neither runs in a browser.
+
 ## Community maps
 The map picker also loads maps that are not in this repository; they are fetched by your browser when you pick them and are never part of the clean pack.
 - **skatemods.com**: every approved map on [skatemods.com/maps](https://skatemods.com/maps/) that has a `.skate` conversion is listed under "Community maps". Direct link: `?smap=<map id>`.

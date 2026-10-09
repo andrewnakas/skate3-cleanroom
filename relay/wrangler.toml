@@ -1,0 +1,16 @@
+# Room relay for the browser build's multiplayer. Deploy: npx wrangler deploy
+name = "skate3-rooms"
+main = "src/index.js"
+compatibility_date = "2026-09-01"
+
+# The browser build connects to wss://skatemods.com/rooms (engine web/net.js).
+routes = [{ pattern = "skatemods.com/rooms/*", zone_name = "skatemods.com" }]
+
+[[durable_objects.bindings]]
+name = "ROOMS"
+class_name = "Room"
+
+# SQLite-backed Durable Objects are available on the Workers free plan.
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Room"]

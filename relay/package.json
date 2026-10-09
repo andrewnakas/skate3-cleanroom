@@ -1,0 +1,7 @@
+{
+  "name": "skate3-rooms",
+  "private": true,
+  "type": "module",
+  "scripts": { "dev": "wrangler dev --port 8788", "deploy": "wrangler deploy", "test": "node --test test/" },
+  "devDependencies": { "wrangler": "^4.146.0" }
+}
