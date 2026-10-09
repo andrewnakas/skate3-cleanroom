@@ -158,7 +158,9 @@ async function externalMap(params, taken) {
   const id = params.get('smap');
   if (id) {
     const detail = await getJson(`${SKATEMODS}/api/maps/${encodeURIComponent(id)}`);
-    const file = (detail.files ?? []).find((f) => f.kind === 'skate');
+    // A converted map has a "skate" file; one uploaded as .skate keeps it as the original.
+    const files = detail.files ?? [];
+    const file = files.find((f) => f.kind === 'skate') ?? files.find((f) => f.kind === 'original' && /\.skate$/i.test(f.name));
     if (!file) throw new Error(`"${detail.title}" has no .skate conversion on skatemods.com yet.`);
     return {
       name: safeName(detail.title, taken),
@@ -237,7 +239,7 @@ async function listCommunity(group, currentId) {
   note('loading...');
   try {
     const { maps } = await getJson(`${SKATEMODS}/api/maps`);
-    const playable = (maps ?? []).filter((m) => (m.kinds ?? []).includes('skate'));
+    const playable = (maps ?? []).filter((m) => (m.kinds ?? []).includes('skate') || m.source_platform === 'skate');
     if (!playable.length) { note('none published yet'); return; }
     group.replaceChildren(...playable.map((m) => new Option(`${m.title} by ${m.author_credit}`, `smap:${m.id}`, false, m.id === currentId)));
   } catch (e) {
