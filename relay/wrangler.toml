@@ -10,7 +10,11 @@ routes = [{ pattern = "skatemods.com/rooms/*", zone_name = "skatemods.com" }]
 name = "ROOMS"
 class_name = "Room"
 
+[[durable_objects.bindings]]
+name = "DIRECTORY"
+class_name = "Directory"
+
 # SQLite-backed Durable Objects are available on the Workers free plan.
 [[migrations]]
 tag = "v1"
-new_sqlite_classes = ["Room"]
+new_sqlite_classes = ["Room", "Directory"]

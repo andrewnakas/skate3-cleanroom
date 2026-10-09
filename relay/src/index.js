@@ -2,6 +2,10 @@
 //
 //   GET [/rooms]/room/<code>  (WebSocket upgrade)   join room <code> (4-24 of [A-Za-z0-9_-])
 //   GET [/rooms]/health
+//   GET [/rooms]/list[?map=<label>]   public rooms: [{code, map, players, max}]
+// A room whose code starts with "pub-" is public: it is listed (with the map
+// label its first member passed as ?map=) while it has members. Any other code
+// is private and known only to people who have the invite link.
 // The /rooms prefix is the skatemods.com/rooms/* route; workers.dev has none.
 //
 // The relay knows nothing about the game. It numbers the members of a room
@@ -27,6 +31,10 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname.replace(/^\/rooms(?=\/)/, '');
     if (path === '/health') return Response.json({ ok: true }, { headers: cors });
+    if (path === '/list') {
+      const dir = env.DIRECTORY.get(env.DIRECTORY.idFromName('all'));
+      return dir.fetch(new Request(`https://dir/list${url.search}`));
+    }
     const match = path.match(/^\/room\/([^/]+)$/);
     if (!match || !ROOM.test(match[1])) return new Response('Not found', { status: 404, headers: cors });
     if (request.headers.get('Upgrade') !== 'websocket') {
@@ -55,7 +63,17 @@ export class Room extends DurableObject {
       .sort((a, b) => a.id - b.id);
   }
 
-  async fetch() {
+  // Public rooms report their member count to the directory.
+  async report(count) {
+    const info = await this.ctx.storage.get('info');
+    if (!info) return;
+    const dir = this.env.DIRECTORY.get(this.env.DIRECTORY.idFromName('all'));
+    await dir.fetch(new Request('https://dir/report', { method: 'POST', body: JSON.stringify({ ...info, players: count }) }));
+  }
+
+  async fetch(request) {
+    const url = new URL(request.url);
+    const code = decodeURIComponent(url.pathname.split('/').pop());
     const pair = new WebSocketPair();
     const [client, server] = Object.values(pair);
     this.ctx.acceptWebSocket(server);
@@ -66,12 +84,21 @@ export class Room extends DurableObject {
       return new Response(null, { status: 101, webSocket: client });
     }
     // An empty room starts numbering again, so a stale host id never lingers.
-    if (!members.length) this.next = 1;
+    if (!members.length) {
+      this.next = 1;
+      if (code.startsWith('pub-')) {
+        const map = (url.searchParams.get('map') ?? '').replace(/[^A-Za-z0-9 _.-]/g, '').slice(0, 48) || 'Unknown map';
+        await this.ctx.storage.put('info', { code, map });
+      } else {
+        await this.ctx.storage.delete('info');
+      }
+    }
     const id = this.next++;
     server.serializeAttachment({ id });
     const host = members.length ? members[0].id : id;
     server.send(JSON.stringify({ type: 'welcome', self: id, host, members: [...members.map((m) => m.id), id] }));
     for (const m of members) this.trySend(m.ws, JSON.stringify({ type: 'join', id }));
+    this.ctx.waitUntil(this.report(members.length + 1));
     return new Response(null, { status: 101, webSocket: client });
   }
 
@@ -92,8 +119,8 @@ export class Room extends DurableObject {
     }
   }
 
-  async webSocketClose(ws) { this.gone(ws); }
-  async webSocketError(ws) { this.gone(ws); }
+  async webSocketClose(ws) { this.gone(ws); await this.report(this.members().length); }
+  async webSocketError(ws) { this.gone(ws); await this.report(this.members().length); }
 
   gone(ws) {
     const id = ws.deserializeAttachment()?.id;
@@ -104,5 +131,27 @@ export class Room extends DurableObject {
     // The session was built around the host, so it cannot continue without it.
     const wasHost = rest.length && rest.every((m) => m.id > id);
     for (const m of rest) this.trySend(m.ws, JSON.stringify(wasHost ? { type: 'host-left' } : { type: 'leave', id }));
+  }
+}
+
+// One instance: the list of public rooms that currently have members.
+export class Directory extends DurableObject {
+  async fetch(request) {
+    const url = new URL(request.url);
+    if (request.method === 'POST') {
+      const { code, map, players } = await request.json();
+      if (players > 0) await this.ctx.storage.put(`room:${code}`, { code, map, players, seen: Date.now() });
+      else await this.ctx.storage.delete(`room:${code}`);
+      return new Response('ok');
+    }
+    const want = url.searchParams.get('map');
+    const rooms = [];
+    const stale = Date.now() - 6 * 3600 * 1000;   // a room that vanished without a close event
+    for (const [key, room] of await this.ctx.storage.list({ prefix: 'room:' })) {
+      if (room.seen < stale) { await this.ctx.storage.delete(key); continue; }
+      if (!want || room.map === want) rooms.push({ code: room.code, map: room.map, players: room.players, max: MAX_MEMBERS });
+    }
+    rooms.sort((a, b) => b.players - a.players);
+    return Response.json({ rooms: rooms.slice(0, 50) }, { headers: { ...cors, 'Cache-Control': 'no-store' } });
   }
 }

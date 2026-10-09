@@ -4,8 +4,8 @@ import assert from 'node:assert/strict';
 
 const BASE = process.env.RELAY ?? 'ws://localhost:8788';
 
-function open(room) {
-  const ws = new WebSocket(`${BASE}/room/${room}`);
+function open(room, query = '') {
+  const ws = new WebSocket(`${BASE}/room/${room}${query}`);
   ws.binaryType = 'arraybuffer';
   const inbox = [];
   const waiters = [];
@@ -56,4 +56,24 @@ test('room cap', async () => {
   const extra = await open(room);
   assert.equal((await extra.next()).type, 'full');
   for (const m of members) m.ws.close();
+});
+
+test('public rooms are listed while they have members', async () => {
+  const http = BASE.replace(/^ws/, 'http');
+  const code = `pub-${Date.now().toString(36)}`;
+  const list = async () => (await (await fetch(`${http}/list?map=TestPark`)).json()).rooms.filter((r) => r.code === code);
+  const a = await open(code, '?map=TestPark');
+  await a.next();
+  const b = await open(code, '?map=Other');
+  await b.next();
+  await new Promise((r) => setTimeout(r, 300));
+  assert.deepEqual(await list(), [{ code, map: 'TestPark', players: 2, max: 10 }]);
+  a.ws.close(); b.ws.close();
+  await new Promise((r) => setTimeout(r, 500));
+  assert.deepEqual(await list(), []);
+  const priv = await open(`priv${Date.now().toString(36)}`, '?map=TestPark');
+  await priv.next();
+  await new Promise((r) => setTimeout(r, 300));
+  assert.equal((await (await fetch(`${http}/list`)).json()).rooms.some((r) => r.code.startsWith('priv')), false);
+  priv.ws.close();
 });
