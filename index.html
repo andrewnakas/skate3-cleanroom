@@ -21,6 +21,8 @@
   #hint { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 5; max-width: min(420px, 90vw);
     background: #0b0f14ee; border: 1px solid #2d3a47; border-radius: 8px; padding: 14px 16px; display: none; }
   #game { position: fixed; inset: 0; }
+  #toast { position: fixed; left: 50%; top: 12px; transform: translateX(-50%); z-index: 4; display: none;
+    background: #0b0f14dd; border: 1px solid #2d3a47; border-radius: 6px; padding: 6px 12px; font-size: 13px; max-width: 90vw; }
   #bevy { width: 100%; height: 100%; display: block; outline: none; }
   #overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
     background: var(--bg); z-index: 2; padding: 16px; box-sizing: border-box; }
@@ -46,8 +48,11 @@
 <div id="game"><canvas id="bevy" tabindex="0"></canvas></div>
 <div id="mapbar"><a id="mapcredit" target="_blank" rel="noopener" hidden></a>
   <label for="map">Map</label><select id="map"></select><input id="mapfile" type="file" accept=".skate" hidden>
+  <button id="roombtn" type="button" hidden title="Skate with friends: up to 10 players on the same map">Multiplayer</button>
+  <button id="roomleave" type="button" hidden>Leave room</button>
   <button id="fullscreen" type="button" title="Fullscreen (F11 also works)">Fullscreen</button></div>
 <div id="hint"></div>
+<div id="toast"></div>
 <div id="overlay"><div id="panel">
   <h1>Skate 3 Rust Engine</h1>
   <div id="status">Starting...</div>

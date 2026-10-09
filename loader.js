@@ -2,6 +2,8 @@
 // the wasm module as globals (crates/skate-game/src/web.rs), then starts it.
 // The map is one of the pack's own, a community map fetched from
 // skatemods.com (?smap=<id>), any .skate URL (?mapurl=) or a local file.
+import { DEFAULT_RELAY, joinRoom, newRoomCode, relayUp, validRoom } from './net.js';
+
 const statusEl = document.getElementById('status');
 const barEl = document.getElementById('progress');
 const overlay = document.getElementById('overlay');
@@ -117,6 +119,9 @@ for (const event of ['fullscreenchange', 'webkitfullscreenchange']) {
 const MAP_PARAMS = ['map', 'smap', 'mapurl', 'local'];
 function go(param, value) {
   const url = new URL(location.href);
+  if (param === 'room') { url.searchParams.set('room', value); location.href = url.toString(); return; }
+  // ?room= and ?relay= stay: switching map keeps you in the room (everyone
+  // has to pick the same map to see each other).
   for (const name of [...MAP_PARAMS, 'teleport', 'args']) url.searchParams.delete(name);
   url.searchParams.set(param, value);
   location.href = url.toString();
@@ -297,6 +302,42 @@ async function fetchParts(parts, total, onBytes) {
   return out;
 }
 
+// Short messages over the game (joins, leaves, room problems).
+function toast(text, sticky = false) {
+  const el = document.getElementById('toast');
+  el.textContent = text;
+  el.style.display = 'block';
+  clearTimeout(toast.timer);
+  if (!sticky) toast.timer = setTimeout(() => { el.style.display = 'none'; }, 4000);
+}
+
+function setupRoomButton(params) {
+  const button = document.getElementById('roombtn');
+  const room = params.get('room');
+  // No relay reachable (not deployed, offline): no Multiplayer button.
+  if (room) button.hidden = false;
+  else relayUp(params.get('relay') || DEFAULT_RELAY).then((up) => { button.hidden = !up; });
+  button.textContent = room ? `Room ${room}: copy invite` : 'Multiplayer';
+  button.onclick = async () => {
+    if (!room) { go('room', newRoomCode()); return; }
+    try {
+      await navigator.clipboard.writeText(location.href);
+      toast('Invite link copied. Friends who open it join this room on this map.');
+    } catch {
+      toast(`Invite link: ${location.href}`, true);
+    }
+  };
+  if (room) {
+    const leave = document.getElementById('roomleave');
+    leave.hidden = false;
+    leave.onclick = () => {
+      const url = new URL(location.href);
+      url.searchParams.delete('room');
+      location.href = url.toString();
+    };
+  }
+}
+
 async function main() {
   if (!navigator.gpu) {
     status('This page needs a WebGPU browser: Chrome/Edge 113+ (or Safari 26+ / Firefox 141+ with WebGPU enabled).', true);
@@ -418,6 +459,19 @@ async function main() {
   if (params.has('teleport')) globalThis.SKATE_TELEPORT = params.get('teleport') || 'none';
   const extra = params.get('args');
   if (extra) globalThis.SKATE_ARGS = JSON.parse(extra);
+
+  // Multiplayer room (?room=CODE): join before the engine starts so it can open
+  // its session at boot. The host is whoever was in the room first.
+  setupRoomButton(params);
+  const room = params.get('room');
+  if (room) {
+    if (!validRoom(room)) throw new Error('?room= must be 4-24 letters, digits, - or _.');
+    status(`Joining room ${room}...`);
+    const relay = params.get('relay') || DEFAULT_RELAY;
+    const mapId = external ? external.key : map ? `${map.name}.${map.hash}` : '__test';
+    const welcome = await joinRoom({ relay, room, map: mapId, onNotice: toast });
+    console.log(`SKATE_ROOM room=${room} self=${welcome.self} host=${welcome.host} members=${welcome.members.length}`);
+  }
 
   status('Starting engine (decoding map, compiling shaders)...');
   const { default: init } = await import('./skate3rust.js');
