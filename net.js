@@ -21,6 +21,17 @@ export async function relayUp(relay) {
   }
 }
 
+/** Public rooms that have players: [{code, map, players, max}] (empty on failure). */
+export async function listRooms(relay) {
+  try {
+    const url = relay.replace(/^ws/, 'http').replace(/\/+$/, '') + '/list';
+    const response = await fetch(url, { signal: AbortSignal.timeout(4000) });
+    return response.ok ? (await response.json()).rooms ?? [] : [];
+  } catch {
+    return [];
+  }
+}
+
 export function validRoom(code) {
   return ROOM.test(code ?? '');
 }
@@ -43,7 +54,7 @@ async function sessionFor(room, map) {
  * {self, host, members}; sets globalThis.SKATE_NET for the engine.
  * `onNotice(text)` reports joins, leaves and disconnects to the page.
  */
-export async function joinRoom({ relay, room, map, onNotice }) {
+export async function joinRoom({ relay, room, map, label, onNotice }) {
   const inbox = [];
   const counts = { tx: 0, txBytes: 0, rx: 0, rxBytes: 0, polls: 0, dropped: 0 };
   // Debug line every 5 s with ?debugnet.
@@ -54,9 +65,9 @@ export async function joinRoom({ relay, room, map, onNotice }) {
   let members = new Set();
   let self = 0;
   let host = 0;
-  const socket = new WebSocket(`${relay.replace(/\/+$/, '')}/room/${encodeURIComponent(room)}`);
+  const socket = new WebSocket(`${relay.replace(/\/+$/, '')}/room/${encodeURIComponent(room)}?map=${encodeURIComponent(label ?? '')}`);
   socket.binaryType = 'arraybuffer';
-  const describe = () => `Room ${room}: ${members.size} player${members.size === 1 ? '' : 's'}`
+  const describe = () => `${room.startsWith('pub-') ? 'Public room' : 'Room'} ${room}: ${members.size} player${members.size === 1 ? '' : 's'}`
     + `${self === host ? ' (you host)' : ''} | invite: ${location.href}`;
 
   globalThis.skateNetSend = (peer, bytes) => {
