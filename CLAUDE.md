@@ -44,3 +44,8 @@ Other clean-room sessions share this PC: ≤8 GB RAM, `cargo -j4`, check `df -h 
 - Scripts print one-screen summaries; one contact sheet per question; fixes as patch lists / JSON briefs.
 - Keep `STATUS.md` current: what works, decisions, what's next, and a short "for the user" list (what to test on the desktop, what to look at).
 - Commit often (git user andre / treesixtyweather@gmail.com; end commit messages with `Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>`).
+
+## MW2 maps (added 2026-10-11)
+Clean-room Modern Warfare 2 maps for the Skate 3 x MW2 web build (andrewnakas/skate3-mw2). Same rules as above
+(facts kept, textures and visual meshes regenerated, taint 0 failing before publishing, private data only on D:).
+Steps and commands: `games/mw2/README.md`. Exporter: `crates/clean_export` in andrewnakas/mw2-skate-web (IW4L fork).
