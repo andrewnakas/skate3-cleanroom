@@ -58,3 +58,17 @@
 64work\skatemods-testdata.
 - geom.py leaves original maps (no WMET, or authored collision layout) alone.
 - Still blocked for Claude (auto-mode permission): `wrangler deploy` of relay/ and of skatemods apps/api, and merging skatemods PR #1.
+
+## Update (2026-10-10): grind edges derived from collision (custom maps)
+- Report: community Kenney Park had no grinds. Cause: the engine only grinds map rail curves; the map has 2 (rails at 0.75 m and 1.35 m), nothing on copings/ledges.
+- Engine (worktree, `cleanroom-web`, **uncommitted**): `crates/skate-game/src/grind_world/derive.rs` + `provider.rs` `StaticProvider::custom`. Maps without the stock WMET manifest get grind edges derived from their triangle collision (convex crease on a rideable face, >= 0.25 m drop beside it, >= 0.6 m long, thin bars merged to one centre rail, edges that already have a map rail skipped). Stock maps unchanged. Maps whose collision is an RWCM archive get nothing derived.
+- Headless Edge on the new wasm: KenneyPark 2 -> 31 grind segments, dmjumpline 1417 -> 2200, SkateSchool 2009 -> 2009. 6 unit tests pass (compiled standalone with rustc; the skate-game test harness was not run).
+- Staged only, not published: `D:\n64work\skate3\site-grind` (hardlinked copy of `site` + new wasm + its own pack.json). Not verified: an actual grind in play.
+- Trap: a new wasm needs the `engine.size` in pack.json updated, or the page sits at "Loading ... 155 / 156 MB" with no console output.
+- `D:\n64work\skate3\target\debug\.cargo-build-lock` is unreadable (Windows error 1392).
+
+## Update (2026-10-11): grinds still failed in the owner's playtest
+- Cause found: the engine's cross-section test refuses a rail line with surface 9 cm to both sides, so rail lines down the middle of Kenney Park's 30 cm bars (the map's own two, and the merged derived ones) never grind.
+- `derive.rs` now runs that same test: wide bars keep both top edges, a map's own polyline rail is dropped when it is too wide to grind. Kenney Park: 34 edges. 7 unit tests pass (standalone rustc).
+- Not yet verified in play. Copings and box edges passed the test in the failed build too, so a second cause is possible.
+- Engine branch `cleanroom-web` is pushed to andrewnakas/skate-3-rust-engine (2026-10-11). Site build with this fix: `D:\n64work\skate3\rebuild_grind.ps1` -> `site-grind` (local only).
