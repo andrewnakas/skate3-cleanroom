@@ -18,8 +18,26 @@ Regenerated: every texture (the Skate 3 rule: size + 4x4 / 16x16 colour grid
 renumbered vertices). Dropped: everything else in the zone (techsets,
 shaders, scripts, sounds, model and material names beyond a hash).
 
-Output (<clean dir>): map.json, render.npz, collision.npz, textures/*.png:
-the input of the engine's tools/mesh_to_skate.py.
+Materials (default --materials pbr, the "hybrid" look): every material is
+classified (games.mw2.classify, dirty side: IW4 surface type, coarse colour
+facts, name keywords) to one of the CC0 sets in games/mw2/cc0_materials.toml
+(ambientCG, downloaded into --cc0-cache and verified CC0 at run time). Its
+albedo is the CC0 colour map graded to the retail 4x4 colour grid + mean, its
+normal and ORM maps are the set's own (games.mw2.materials). Alpha-tested
+materials keep the regenerated 2-bit alpha outline. Materials no set fits
+(decals, signs, glass, blends) keep the regenerated texture, as does
+everything with --materials regen.
+
+Options:
+  --materials pbr|regen   (default pbr)
+  --pbr-size 512|1024     CC0 output texture size (default 512)
+  --cc0-cache <dir>       CC0 download cache (default <spec dir>/../cc0)
+  --max-texture N         cap for regenerated textures (default 512)
+
+Output (<clean dir>): map.json, render.npz, collision.npz, textures/*.png
+(textures/pbr/*: shared normal + ORM maps), CREDITS.json (CC0 sets used):
+the input of the engine's tools/mesh_to_skate.py. Spec: materials-<zone>.json
+(the classification decisions and the coarse facts behind them; no names).
 """
 import hashlib
 import json
@@ -30,6 +48,8 @@ import time
 import numpy as np
 from PIL import Image
 
+from games.mw2 import classify as cls_mod
+from games.mw2 import materials as lib_mod
 from games.skate3 import geom
 from games.skate3.generate import FACTS, regen
 
@@ -64,9 +84,17 @@ def shrink(rgba, cap):
     return np.asarray(Image.fromarray(rgba, "RGBA").resize(size, Image.LANCZOS))
 
 
+def option(argv, name, default):
+    return argv[argv.index(name) + 1] if name in argv else default
+
+
 def main(argv):
     src, dst, spec = argv[1], argv[2], argv[3]
-    cap = int(argv[argv.index("--max-texture") + 1]) if "--max-texture" in argv else 512
+    cap = int(option(argv, "--max-texture", 512))
+    mode = option(argv, "--materials", "pbr")
+    size = int(option(argv, "--pbr-size", 512))
+    assert mode in ("pbr", "regen") and size in (512, 1024), "--materials pbr|regen, --pbr-size 512|1024"
+    cache = option(argv, "--cc0-cache", os.path.join(os.path.dirname(os.path.abspath(spec)), "cc0"))
     t0 = time.time()
     ex = json.load(open(os.path.join(src, "export.json")))
     zone = ex["zone"]
@@ -76,21 +104,64 @@ def main(argv):
     os.makedirs(os.path.join(dst, "textures"), exist_ok=True)
     os.makedirs(spec, exist_ok=True)
 
+    # Classification (dirty side: facts only, names never leave this function).
+    retail = {}
+    for i, m in enumerate(ex["materials"], 1):
+        if m.get("image"):
+            retail[i] = np.asarray(Image.open(os.path.join(src, m["image"])).convert("RGBA"))
+    facts = {i: cls_mod.image_facts(a) for i, a in retail.items()}
+    density = cls_mod.texel_density(render)
+    inferred = {}
+    if any(not m.get("surface") for m in ex["materials"]):
+        inferred = cls_mod.surfaces_from_collision(render, collision, len(ex["materials"]))
+    decisions = cls_mod.classify(ex["materials"], surface_names, facts, inferred, zone)
+    for d in decisions:
+        d["m_per_uv"] = round(density.get(d["index"], 0.0), 4)
+
+    lib = None
+    if mode == "pbr":
+        usable = lib_mod.fetch(cache)
+        lib = lib_mod.Library(cache, usable)
+        os.makedirs(os.path.join(dst, "textures", "pbr"), exist_ok=True)
+
     # Textures.
     materials = []
-    for i, m in enumerate(ex["materials"], 1):
+    shared = set()
+    counts = {"pbr": 0, "regen": 0}
+    for (i, m), d in zip(enumerate(ex["materials"], 1), decisions):
         key = material_key(zone, m["name"])
         entry = {
             "name": f"m{i:03d}",
             "color": [1, 1, 1],
             "roughness": 0.9,
             "alpha_mode": int(m.get("alpha", 0)),
-            "audio": audio_surface(surface_names[m.get("surface", 0)] if m.get("surface", 0) < len(surface_names) else ""),
+            "audio": audio_surface(d["surface"]),
         }
-        if m.get("image"):
-            rgba = np.asarray(Image.open(os.path.join(src, m["image"])).convert("RGBA"))
-            clean = regen(key, shrink(rgba, cap))
+        if i in retail:
+            rgba = retail[i]
             out = f"textures/m{i:03d}.png"
+            cls = lib.resolve(d["class"]) if lib else None
+            if cls:
+                f = facts[i]
+                reps = lib_mod.reps_for(d["m_per_uv"], lib.size_m(cls), size)
+                alpha = None
+                if entry["alpha_mode"] == 1 and f["alpha_coverage"] > 0:
+                    outline = regen(key, shrink(rgba, cap))[..., 3]
+                    alpha = np.asarray(Image.fromarray(outline, "L").resize((size, size), Image.NEAREST))
+                clean = lib.albedo(cls, size, reps, f["grid4"], f["mean"], f["contrast"], alpha)
+                tag = f"textures/pbr/{cls}-{size}-r{reps}"
+                if tag not in shared:
+                    Image.fromarray(lib.normal_rgba(cls, size, reps), "RGBA").save(os.path.join(dst, tag + "-n.png"), optimize=True)
+                    Image.fromarray(lib.orm_rgba(cls, size, reps), "RGBA").save(os.path.join(dst, tag + "-orm.png"), optimize=True)
+                    shared.add(tag)
+                # ORM green is the roughness; the scalar multiplies it, so 1.
+                entry.update(normal=tag + "-n.png", orm=tag + "-orm.png", roughness=1.0)
+                d.update(used=cls, reps=reps)
+                counts["pbr"] += 1
+            else:
+                clean = regen(key, shrink(rgba, cap))
+                d["used"] = "regen"
+                counts["regen"] += 1
             Image.fromarray(clean, "RGBA").save(os.path.join(dst, out), optimize=True)
             entry["texture"] = out
         materials.append(entry)
@@ -139,8 +210,18 @@ def main(argv):
         "materials": materials,
     }, open(os.path.join(dst, "map.json"), "w"), indent=1)
     json.dump(FACTS, open(os.path.join(spec, f"textures-{zone}.json"), "w"))
+    json.dump(decisions, open(os.path.join(spec, f"materials-{zone}.json"), "w"), indent=1)
+    if lib:
+        json.dump({"note": "Textures of this map use these CC0 1.0 sets from ambientCG (no attribution required).",
+                   "sets": [c for c in lib_mod.credits(cache) if any(d.get("used") == c["class"] for d in decisions)]},
+                  open(os.path.join(dst, "CREDITS.json"), "w"), indent=1)
     json.dump({k: v for k, v in stats.items() if not isinstance(v, np.ndarray)},
               open(os.path.join(spec, f"geometry-{zone}.json"), "w"), indent=1, default=float)
+    by_class = {}
+    for d in decisions:
+        by_class[d.get("used", d["class"])] = by_class.get(d.get("used", d["class"]), 0) + 1
+    print(f"mw2 materials {zone} ({mode}, {size}px): {counts['pbr']} CC0 PBR, {counts['regen']} regenerated, "
+          f"{len(shared)} shared normal/ORM pairs; {dict(sorted(by_class.items()))}")
     print(f"mw2 generate {zone}: {len(ex['materials'])} materials, {len(FACTS)} textures regenerated, "
           f"{stats.get('tris', 0)} -> {len(new_idx)} triangles ({stats.get('tris_retessellated', 0)} re-cut), "
           f"{len(surf)} collision kept, {len(spawns)} spawns, {time.time() - t0:.0f}s -> {dst}")

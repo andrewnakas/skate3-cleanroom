@@ -8,6 +8,11 @@ of taint.FAIL_RUN bytes or more fail, and so does a texture with 4+ sampled
 16-byte windows in common with any single retail texture (the Skate 3 rule).
 Geometry: the clean vertex streams (positions, normals, UVs) and index buffer
 against the retail ones: any shared 32-byte window fails (games.skate3.geom_taint).
+PBR maps (generate --materials pbr): every albedo, normal and ORM map is
+scanned the same way; an albedo against its own retail texture, the shared
+normal / ORM maps against every retail texture of the same byte size. Their
+detail comes from the CC0 sets listed in the clean CREDITS.json (ambientCG,
+CC0 1.0): non-retail sources, listed, not scanned against.
 Collision triangles and spawns are kept facts: listed, not scanned.
 Exit code 1 on any failure.
 """
@@ -47,23 +52,35 @@ def main(argv):
     by_material = {}
     for i, _, a in retail:
         by_material.setdefault(i, []).append(a.tobytes())
+    by_size = {}
+    for i, _, a in retail:
+        by_size.setdefault(a.nbytes, []).append(a.tobytes())
     scanned = 0
+    kinds = {"texture": 0, "normal": 0, "orm": 0}
+    seen = set()
     for i, m in enumerate(spec["materials"], 1):
-        if not m.get("texture"):
-            continue
-        s = np.asarray(Image.open(os.path.join(clean, m["texture"])).convert("RGBA")).tobytes()
-        scanned += 1
-        for r in by_material.get(i, []):
-            run = max_same_run(s, r)
-            if run >= taint.FAIL_RUN:
-                bad.append((m["texture"], f"run {run} B with its own retail texture"))
-        h = sampled(s)
-        if len(h) and len(index):
-            pos = np.minimum(np.searchsorted(index, h), len(index) - 1)
-            if int((index[pos] == h).sum()) >= 4:
-                worst = max(len(set(h.tolist()) & set(sampled(a.tobytes()).tolist())) for _, _, a in retail)
-                if worst >= 4:
-                    bad.append((m["texture"], f"{worst} sampled windows shared with one retail texture"))
+        for kind in ("texture", "normal", "orm"):
+            path = m.get(kind)
+            if not path or path in seen:
+                continue
+            seen.add(path)
+            s = np.asarray(Image.open(os.path.join(clean, path)).convert("RGBA")).tobytes()
+            scanned += 1
+            kinds[kind] += 1
+            # Albedo: its own retail texture (as before). Shared maps: every retail texture of its size.
+            against = by_material.get(i, []) if kind == "texture" else by_size.get(len(s), [])
+            for r in against:
+                run = max_same_run(s, r)
+                if run >= taint.FAIL_RUN:
+                    bad.append((path, f"run {run} B with a retail texture"))
+                    break
+            h = sampled(s)
+            if len(h) and len(index):
+                pos = np.minimum(np.searchsorted(index, h), len(index) - 1)
+                if int((index[pos] == h).sum()) >= 4:
+                    worst = max(len(set(h.tolist()) & set(sampled(a.tobytes()).tolist())) for _, _, a in retail)
+                    if worst >= 4:
+                        bad.append((path, f"{worst} sampled windows shared with one retail texture"))
 
     dirty = np.load(os.path.join(src, "render.npz"))
     new = np.load(os.path.join(clean, "render.npz"))
@@ -79,7 +96,13 @@ def main(argv):
         same_positions = sum(tuple(p) in old for p in np.asarray(new["positions"], np.float32).view(np.uint32).reshape(-1, 3).tolist())
 
     kept = len(np.load(os.path.join(clean, "collision.npz"))["triangles"])
-    print(f"mw2 taint: {scanned} textures scanned, geometry windows {geometry}, "
+    credits_path = os.path.join(clean, "CREDITS.json")
+    cc0 = json.load(open(credits_path))["sets"] if os.path.exists(credits_path) else []
+    if cc0:
+        print(f"non-retail sources (CC0 1.0, not scanned against): "
+              + ", ".join(f"{c['id']} ({c['license']}, {c['source']})" for c in cc0))
+    print(f"mw2 taint: {scanned} textures scanned ({kinds['texture']} albedo, {kinds['normal']} normal, "
+          f"{kinds['orm']} ORM), geometry windows {geometry}, "
           f"{same_positions} of {len(new['positions'])} vertices keep a retail position exactly; "
           f"kept facts not scanned: {kept} collision triangles, {len(spec.get('spawns', []))} spawns; "
           f"{len(bad)} failing")

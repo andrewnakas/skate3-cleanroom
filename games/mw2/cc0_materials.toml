@@ -1,0 +1,328 @@
+# CC0 PBR material library for the clean MW2 maps (games/mw2/materials.py).
+#
+# Every set comes from ambientCG (https://ambientcg.com, Lennart Demes and
+# contributors), published under Creative Commons CC0 1.0 Universal
+# (https://docs.ambientcg.com/license/). Nothing here is retail data. The
+# pipeline downloads the 1K-JPG zip of each set at run time into a cache dir
+# (never committed), checks the asset against the ambientCG API and the site's
+# licence page, and keeps only Color, NormalGL, Roughness, AmbientOcclusion,
+# Metalness and Displacement.
+#
+# Per entry: class (what the classifier picks), what, author, source, license,
+# id + url (the 1K-JPG download), size_m (real-world width of one tile, from
+# the API's dimensionX when it gives one, else an estimate), metal (0..1:
+# scales the set's Metalness map, or is the constant metalness when it has
+# none; kept low because the maps have no reflection probes), normal
+# (normal-map strength, 1 = as published).
+
+[[material]]
+class = "concrete_smooth"
+id = "Concrete046"
+url = "https://ambientcg.com/get?file=Concrete046_1K-JPG.zip"
+source = "https://ambientcg.com/a/Concrete046"
+author = "ambientCG (Lennart Demes)"
+license = "CC0-1.0"
+what = "plain smooth grey concrete wall"
+size_m = 2.4
+metal = 0.0
+normal = 1.0
+
+[[material]]
+class = "concrete_rough"
+id = "Concrete034"
+url = "https://ambientcg.com/get?file=Concrete034_1K-JPG.zip"
+source = "https://ambientcg.com/a/Concrete034"
+author = "ambientCG (Lennart Demes)"
+license = "CC0-1.0"
+what = "light grey concrete, fine pores"
+size_m = 1.1
+metal = 0.0
+normal = 1.0
+
+[[material]]
+class = "concrete_dirty"
+id = "Concrete012"
+url = "https://ambientcg.com/get?file=Concrete012_1K-JPG.zip"
+source = "https://ambientcg.com/a/Concrete012"
+author = "ambientCG (Lennart Demes)"
+license = "CC0-1.0"
+what = "old stained concrete / sandstone wall"
+size_m = 2.0
+metal = 0.0
+normal = 1.0
+
+[[material]]
+class = "asphalt"
+id = "Asphalt033"
+url = "https://ambientcg.com/get?file=Asphalt033_1K-JPG.zip"
+source = "https://ambientcg.com/a/Asphalt033"
+author = "ambientCG (Lennart Demes)"
+license = "CC0-1.0"
+what = "asphalt"
+size_m = 2.5
+metal = 0.0
+normal = 1.0
+
+[[material]]
+class = "asphalt_cracked"
+id = "Road013A"
+url = "https://ambientcg.com/get?file=Road013A_1K-JPG.zip"
+source = "https://ambientcg.com/a/Road013A"
+author = "ambientCG (Lennart Demes)"
+license = "CC0-1.0"
+what = "cracked worn asphalt road"
+size_m = 3.0
+metal = 0.0
+normal = 1.0
+
+[[material]]
+class = "paving"
+id = "PavingStones138"
+url = "https://ambientcg.com/get?file=PavingStones138_1K-JPG.zip"
+source = "https://ambientcg.com/a/PavingStones138"
+author = "ambientCG (Lennart Demes)"
+license = "CC0-1.0"
+what = "paving stones"
+size_m = 1.25
+metal = 0.0
+normal = 1.0
+
+[[material]]
+class = "plaster"
+id = "Plaster001"
+url = "https://ambientcg.com/get?file=Plaster001_1K-JPG.zip"
+source = "https://ambientcg.com/a/Plaster001"
+author = "ambientCG (Lennart Demes)"
+license = "CC0-1.0"
+what = "rough white stucco plaster"
+size_m = 2.0
+metal = 0.0
+normal = 1.0
+
+[[material]]
+class = "painted_plaster"
+id = "PaintedPlaster017"
+url = "https://ambientcg.com/get?file=PaintedPlaster017_1K-JPG.zip"
+source = "https://ambientcg.com/a/PaintedPlaster017"
+author = "ambientCG (Lennart Demes)"
+license = "CC0-1.0"
+what = "painted plaster wall"
+size_m = 2.0
+metal = 0.0
+normal = 1.0
+
+[[material]]
+class = "brick"
+id = "Bricks105"
+url = "https://ambientcg.com/get?file=Bricks105_1K-JPG.zip"
+source = "https://ambientcg.com/a/Bricks105"
+author = "ambientCG (Lennart Demes)"
+license = "CC0-1.0"
+what = "brick wall"
+size_m = 2.4
+metal = 0.0
+normal = 1.0
+
+[[material]]
+class = "rusted_metal"
+id = "Metal021"
+url = "https://ambientcg.com/get?file=Metal021_1K-JPG.zip"
+source = "https://ambientcg.com/a/Metal021"
+author = "ambientCG (Lennart Demes)"
+license = "CC0-1.0"
+what = "old rusty steel with leaks and spots"
+size_m = 1.5
+metal = 0.5
+normal = 1.0
+
+[[material]]
+class = "corrugated_metal"
+id = "CorrugatedSteel005"
+url = "https://ambientcg.com/get?file=CorrugatedSteel005_1K-JPG.zip"
+source = "https://ambientcg.com/a/CorrugatedSteel005"
+author = "ambientCG (Lennart Demes)"
+license = "CC0-1.0"
+what = "painted corrugated steel sheet"
+size_m = 2.0
+metal = 0.5
+normal = 1.0
+
+[[material]]
+class = "painted_metal"
+id = "PaintedMetal004"
+url = "https://ambientcg.com/get?file=PaintedMetal004_1K-JPG.zip"
+source = "https://ambientcg.com/a/PaintedMetal004"
+author = "ambientCG (Lennart Demes)"
+license = "CC0-1.0"
+what = "painted metal panel"
+size_m = 1.5
+metal = 0.5
+normal = 1.0
+
+[[material]]
+class = "metal_plate"
+id = "DiamondPlate008A"
+url = "https://ambientcg.com/get?file=DiamondPlate008A_1K-JPG.zip"
+source = "https://ambientcg.com/a/DiamondPlate008A"
+author = "ambientCG (Lennart Demes)"
+license = "CC0-1.0"
+what = "industrial diamond tread plate"
+size_m = 1.0
+metal = 0.7
+normal = 1.0
+
+[[material]]
+class = "wood_planks"
+id = "Planks037A"
+url = "https://ambientcg.com/get?file=Planks037A_1K-JPG.zip"
+source = "https://ambientcg.com/a/Planks037A"
+author = "ambientCG (Lennart Demes)"
+license = "CC0-1.0"
+what = "weathered wooden planks"
+size_m = 2.0
+metal = 1.0
+normal = 1.0
+
+[[material]]
+class = "wood_floor"
+id = "WoodFloor051"
+url = "https://ambientcg.com/get?file=WoodFloor051_1K-JPG.zip"
+source = "https://ambientcg.com/a/WoodFloor051"
+author = "ambientCG (Lennart Demes)"
+license = "CC0-1.0"
+what = "wooden floor boards"
+size_m = 1.8
+metal = 0.0
+normal = 1.0
+
+[[material]]
+class = "plywood"
+id = "Chipboard004"
+url = "https://ambientcg.com/get?file=Chipboard004_1K-JPG.zip"
+source = "https://ambientcg.com/a/Chipboard004"
+author = "ambientCG (Lennart Demes)"
+license = "CC0-1.0"
+what = "chipboard / plywood sheet"
+size_m = 1.2
+metal = 0.0
+normal = 1.0
+
+[[material]]
+class = "bark"
+id = "Bark014"
+url = "https://ambientcg.com/get?file=Bark014_1K-JPG.zip"
+source = "https://ambientcg.com/a/Bark014"
+author = "ambientCG (Lennart Demes)"
+license = "CC0-1.0"
+what = "tree bark"
+size_m = 1.0
+metal = 0.0
+normal = 1.0
+
+[[material]]
+class = "sand"
+id = "Ground054"
+url = "https://ambientcg.com/get?file=Ground054_1K-JPG.zip"
+source = "https://ambientcg.com/a/Ground054"
+author = "ambientCG (Lennart Demes)"
+license = "CC0-1.0"
+what = "sand"
+size_m = 3.5
+metal = 0.0
+normal = 1.0
+
+[[material]]
+class = "dirt"
+id = "Ground103"
+url = "https://ambientcg.com/get?file=Ground103_1K-JPG.zip"
+source = "https://ambientcg.com/a/Ground103"
+author = "ambientCG (Lennart Demes)"
+license = "CC0-1.0"
+what = "brown soil"
+size_m = 2.5
+metal = 0.0
+normal = 1.0
+
+[[material]]
+class = "gravel"
+id = "Gravel043"
+url = "https://ambientcg.com/get?file=Gravel043_1K-JPG.zip"
+source = "https://ambientcg.com/a/Gravel043"
+author = "ambientCG (Lennart Demes)"
+license = "CC0-1.0"
+what = "gravel"
+size_m = 1.6
+metal = 0.0
+normal = 1.0
+
+[[material]]
+class = "rubble"
+id = "Ground111"
+url = "https://ambientcg.com/get?file=Ground111_1K-JPG.zip"
+source = "https://ambientcg.com/a/Ground111"
+author = "ambientCG (Lennart Demes)"
+license = "CC0-1.0"
+what = "urban ground with construction debris"
+size_m = 2.8
+metal = 0.0
+normal = 1.0
+
+[[material]]
+class = "grass"
+id = "Grass004"
+url = "https://ambientcg.com/get?file=Grass004_1K-JPG.zip"
+source = "https://ambientcg.com/a/Grass004"
+author = "ambientCG (Lennart Demes)"
+license = "CC0-1.0"
+what = "grass"
+size_m = 1.4
+metal = 0.0
+normal = 1.0
+
+[[material]]
+class = "rock"
+id = "Rock058"
+url = "https://ambientcg.com/get?file=Rock058_1K-JPG.zip"
+source = "https://ambientcg.com/a/Rock058"
+author = "ambientCG (Lennart Demes)"
+license = "CC0-1.0"
+what = "grey rock cliff"
+size_m = 3.0
+metal = 0.0
+normal = 1.0
+
+[[material]]
+class = "tiles"
+id = "Tiles107"
+url = "https://ambientcg.com/get?file=Tiles107_1K-JPG.zip"
+source = "https://ambientcg.com/a/Tiles107"
+author = "ambientCG (Lennart Demes)"
+license = "CC0-1.0"
+what = "floor / wall tiles"
+size_m = 1.0
+metal = 0.0
+normal = 1.0
+
+[[material]]
+class = "fabric"
+id = "Fabric061"
+url = "https://ambientcg.com/get?file=Fabric061_1K-JPG.zip"
+source = "https://ambientcg.com/a/Fabric061"
+author = "ambientCG (Lennart Demes)"
+license = "CC0-1.0"
+what = "woven fabric (tarps, sandbags, cloth)"
+size_m = 0.4
+metal = 0.0
+normal = 1.0
+
+[[material]]
+class = "carpet"
+id = "Carpet001"
+url = "https://ambientcg.com/get?file=Carpet001_1K-JPG.zip"
+source = "https://ambientcg.com/a/Carpet001"
+author = "ambientCG (Lennart Demes)"
+license = "CC0-1.0"
+what = "grey carpet"
+size_m = 1.0
+metal = 0.0
+normal = 1.0
